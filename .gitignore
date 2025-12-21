@@ -1,0 +1,12 @@
+# Ignore everything
+*
+
+# Allow only specific files
+!/public/
+!/public/index.html
+!/mini_project/
+!/mini_project/weather.js
+!/.gitignore
+
+# Ignore secrets
+.env

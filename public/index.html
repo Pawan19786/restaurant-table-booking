@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Weather App</title>
+    <style>
+        /* ------------------------------------- */
+        /* BASIC STYLING & TEXTURE */
+        /* ------------------------------------- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* ------------------------------------- */
+        /* CARD CONTAINER */
+        /* ------------------------------------- */
+        .weather-card {
+            width: 90%;
+            max-width: 400px;
+            padding: 30px;
+            border-radius: 20px;
+            background-color: #e3f2fd; 
+            box-shadow: 0 10px 30px rgba(45, 65, 80, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            transition: transform 0.3s ease;
+        }
+        
+        .weather-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* ------------------------------------- */
+        /* HEADER */
+        /* ------------------------------------- */
+        h2 {
+            color: #1e88e5; 
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #bbdefb;
+            padding-bottom: 10px;
+        }
+
+        /* ------------------------------------- */
+        /* INPUT FORM */
+        /* ------------------------------------- */
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        #cityInput {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid #90caf9; 
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        #cityInput:focus {
+            border-color: #1e88e5; 
+            outline: none;
+            box-shadow: 0 0 5px rgba(30, 136, 229, 0.4);
+        }
+
+        #searchButton {
+            padding: 10px 20px;
+            background-color: #1e88e5; 
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        #searchButton:hover {
+            background-color: #1565c0; 
+        }
+        
+        #searchButton:active {
+            transform: scale(0.98);
+        }
+
+        /* ------------------------------------- */
+        /* WEATHER INFO DISPLAY */
+        /* ------------------------------------- */
+        .weather-info {
+            background-color: #bbdefb; 
+            padding: 20px;
+            border-radius: 10px;
+            color: #1565c0; 
+        }
+
+        .info-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #0d47a1; 
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed #90caf9;
+        }
+
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            font-weight: 500;
+        }
+
+        .value {
+            font-weight: 700;
+            color: #0d47a1;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="weather-card">
+        <h2>🌤️ Weather Finder</h2>
+
+        <div class="input-group">
+            <input type="text" id="cityInput" placeholder="Enter city name..." aria-label="City name input">
+            <button id="searchButton">Search</button>
+        </div>
+
+        <div class="weather-info">
+            <div class="info-title">Current Weather Details</div>
+
+            <div class="data-row">
+                <span class="label">Location:</span>
+                <span class="value" id="location">---</span>
+            </div>
+
+            <div class="data-row">
+                <span class="label">Temperature:</span>
+                <span class="value" id="temperature">---</span>
+            </div>
+            
+            <div class="data-row">
+                <span class="label">Condition:</span>
+                <span class="value" id="condition">---</span>
+            </div>
+            
+            <div class="data-row">
+                <span class="label">Humidity:</span>
+                <span class="value" id="humidity">---</span>
+            </div>
+        </div>
+        
+        <p id="message" style="text-align: center; font-size: 12px; margin-top: 20px; color: #4b6582;">*Data will appear here after search.</p>
+    </div>
+
+    <script>
+        document.getElementById('searchButton').addEventListener('click', fetchWeather);
+
+        async function fetchWeather() {
+            const city = document.getElementById('cityInput').value.trim();
+            const messageElement = document.getElementById('message');
+
+            if (!city) {
+                messageElement.textContent = "Please enter a city name!";
+                messageElement.style.color = 'red';
+                return;
+            }
+            
+            // Display loading message
+            messageElement.textContent = `Fetching weather for ${city}...`;
+            messageElement.style.color = '#4b6582';
+            
+            try {
+                // Call the Node.js server endpoint
+                const response = await fetch(`/weather?city=${encodeURIComponent(city)}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    // Handle errors sent from the server (e.g., City Not Found)
+                    throw new Error(data.error || 'Could not fetch weather data.');
+                }
+                
+                // --- DATA DISPLAY: Server se aane wale data ko display karna ---
+                // Data keys: Location, Temperature, Condition, Humidity
+                document.getElementById('location').textContent = data.Location;
+                document.getElementById('temperature').textContent = data.Temperature;
+                document.getElementById('condition').textContent = data.Condition;
+                document.getElementById('humidity').textContent = data.Humidity;
+
+                messageElement.textContent = `Successfully updated for ${data.Location}.`;
+                messageElement.style.color = 'green';
+                
+            } catch (error) {
+                // Clear previous data and show error
+                document.getElementById('location').textContent = '---';
+                document.getElementById('temperature').textContent = '---';
+                document.getElementById('condition').textContent = '---';
+                document.getElementById('humidity').textContent = '---';
+                
+                messageElement.textContent = `Error: ${error.message}`;
+                messageElement.style.color = 'red';
+            }
+        }
+    </script>
+
+</body>
+</html>
