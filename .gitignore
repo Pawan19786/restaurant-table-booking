@@ -6,6 +6,7 @@
 
 # Allow only weather.js inside mini_project
 !/mini_project/
+!/mini_project/app.js
 !/mini_project/weather.js
 
 # Ignore node_modules (installed packages)
