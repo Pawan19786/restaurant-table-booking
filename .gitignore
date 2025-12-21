@@ -1,18 +1,18 @@
-# Ignore everything
+# Ignore everything by default
 *
 
 # Allow index.html in root
 !/index.html
 
-# Allow only this weather.js inside mini_project
+# Allow only weather.js inside mini_project
 !/mini_project/
 !/mini_project/weather.js
 
+# Ignore node_modules (installed packages)
 node_modules/
-
-
-# Allow .gitignore itself
-!/.gitignore
 
 # Always ignore secrets
 .env
+
+# Allow .gitignore itself
+!/.gitignore
