@@ -13,7 +13,8 @@ const __dirname = path.dirname(__filename);
 
 // Server aur API Key setup
 const app = express();
-const PORT = 3000;
+// Purana code hata kar ye likh:
+const PORT = process.env.PORT || 3000;
 // *** REPLACE WITH YOUR ACTUAL OPENWEATHERMAP KEY ***
 const API_KEY = process.env.WEATHER_API_KEY; 
 
