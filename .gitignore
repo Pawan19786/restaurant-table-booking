@@ -1,19 +1,24 @@
-# Ignore everything by default
-*
-
-# Allow index.html in root
-!/index.html
-
-# Allow only weather.js inside mini_project
-!/mini_project/
-!/mini_project/app.js
-!/mini_project/weather.js
-
-# Ignore node_modules (installed packages)
+# Node modules
 node_modules/
 
-# Always ignore secrets
-.env
+# Frontend build files
+frontend/dist/
+frontend/node_modules/
 
-# Allow .gitignore itself
-!/.gitignore
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Environment variables
+.env
+.env.*
+
+# OS files
+.DS_Store
+
+# VS Code
+.vscode/
+
+# Misc
+coverage/

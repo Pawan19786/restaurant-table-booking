@@ -1,29 +1,28 @@
 {
-  "name": "node_pawan",
+  "name": "tabletime",
   "version": "1.0.0",
-  "description": "",
-  "license": "ISC",
-  "author": "pawan sahu",
+  "description": "TableTime - Reservation Management System",
   "type": "module",
-  "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node Server.js",
-    "dev": "nodemon Server.js"
-  },
-  "dependencies": {
-    "axios": "^1.13.2",
-    "bcrypt": "^6.0.0",
-    "chalk": "^5.6.2",
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.4",
-    "express": "^5.2.1",
-    "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.0.2"
+    "start": "node backend/Server.js",
+    "backend": "cd backend && node Server.js",
+    "backend:dev": "cd backend && nodemon Server.js",
+    "dev": "start cmd /k \"cd backend && node Server.js\" && start cmd /k \"cd frontend && npm run dev\"",
+    "frontend": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build",
+    "setup": "cd backend && npm install && cd ../frontend && npm install"
   },
   "devDependencies": {
-    "nodemon": "^3.1.11"
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
+    "@splinetool/react-spline": "^4.1.0",
+    "@splinetool/runtime": "^1.12.61",
+    "@types/three": "^0.183.1",
+    "cloudinary": "^2.9.0",
+    "nodemailer": "^8.0.2",
+    "three": "^0.183.2"
   }
 }

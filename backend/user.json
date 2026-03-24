@@ -1,0 +1,51 @@
+[
+  {
+    "id": "1771265774036",
+    "name": "pawan",
+    "email": "test7@.com",
+    "password": "$2b$10$eGhV5JcsGF5jLNs5sv6u1O6eScem6IFpef/9H1HFErthLmQPdYucu"
+  },
+  {
+    "id": "1771267107686",
+    "name": "Pawan",
+    "email": "test@.com",
+    "password": "$2b$10$iTmmtwsb8E7mMAVp5xOJyu487DyDrfrAiLAetZEjRhjK1x4w.zwMy"
+  },
+  {
+    "id": "1771267345656",
+    "name": "Pawan",
+    "email": "pawan@example.com",
+    "password": "$2b$10$YBbuYa1xWPbmsqvIJVbgLO4Q58.GdoKVzsx4gJ8ozEK52fz0mC2AS",
+    "role": "admin",
+    "resetPasswordToken": null,
+    "resetPasswordExpire": null
+  },
+  {
+    "id": "1771348898939",
+    "name": "aman",
+    "email": "pawan1@example.com",
+    "password": "$2b$10$Koo2vt0RvtjSdhGgX3HC4uwMfCr5HnSfi3jiqCrbPskQ2F/Qjbw8i",
+    "role": "user"
+  },
+  {
+    "id": "1771348929516",
+    "name": "aman",
+    "email": "aman1@example.com",
+    "password": "$2b$10$hLC6FbXZf9ceXdFK4UTuFu6dz1lI7tZ34gh8mEo5okVP93cXqPyS2",
+    "role": "user"
+  },
+  {
+    "id": "1771349498791",
+    "name": "aman",
+    "email": "amani@example.com",
+    "password": "$2b$10$qdKCrDGfUnlwWb.bcyXPtOtggTu3KSQNigaol7AH53gZZVBA9wYca",
+    "role": "user"
+  },
+  {
+    "id": "1771349643589",
+    "name": "aman",
+    "email": "ashu@example.com",
+    "password": "$2b$10$/MxAcBeIRMz7n7D1ji2APedZhAmjE73LisYz/ggOcZJWYS6aAfzp6",
+    "role": "admin"
+  }
+]
