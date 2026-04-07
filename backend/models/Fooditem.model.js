@@ -41,7 +41,7 @@ const foodItemSchema = new mongoose.Schema(
     },
     spicyLevel: {
       type: String,
-      enum: ["Mild", "Medium", "Hot", "Extra Hot"],
+      enum: ["No Spicy", "Mild", "Medium", "Hot", "Extra Hot"],
       default: "Medium",
     },
 
@@ -52,6 +52,10 @@ const foodItemSchema = new mongoose.Schema(
     },
     imagePublicId: {
       type: String,   // Cloudinary public_id
+      default: "",
+    },
+    imageUrl: {
+      type: String,
       default: "",
     },
 

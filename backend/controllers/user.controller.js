@@ -16,21 +16,47 @@ export const applyForOwner = async (req, res) => {
     const {
       fullName, phone, country, state, city,
       restaurantName, restaurantType, address, cuisines, restaurantPhoto,
+      // Step 3 — Operations
+      description, restaurantPhone, managerContact, telNumber,
+      openingTime, closingTime, priceRange, rating,
+      // Step 4 — Documents
       fssaiNumber, idProofType, idProof,
       subscriptionPlan, subscriptionDuration, subscriptionPrice,
     } = req.body;
 
+    // ── Safety: never store raw base64 in MongoDB (causes doc bloat / 16MB limit) ──
+    // Frontend should upload to Cloudinary and send back the URL.
+    // If somehow a base64 string slips through, we strip it here.
+    const safePhoto  = restaurantPhoto && !restaurantPhoto.startsWith("data:") ? restaurantPhoto  : "";
+    const safeIdProof = idProof        && !idProof.startsWith("data:")         ? idProof          : "";
+
     user.ownerStatus      = "pending";
     user.ownerApplication = {
-      fullName, phone, country, state, city,
-      restaurantName, restaurantType, address,
-      cuisines:             cuisines || [],
-      restaurantPhoto:      restaurantPhoto || "",
-      fssaiNumber,
-      idProofType:          idProofType || "aadhar",
-      idProof:              idProof || "",
-      subscriptionPlan,
-      subscriptionDuration,
+      fullName,
+      phone,
+      country,
+      state,
+      city,
+      restaurantName,
+      restaurantType,
+      address,
+      cuisines:             cuisines       || [],
+      restaurantPhoto:      safePhoto,           // ← Cloudinary URL only
+      // Operations fields (Step 3)
+      description:          description    || "",
+      restaurantPhone:      restaurantPhone || "",
+      managerContact:       managerContact  || "",
+      telNumber:            telNumber       || "",
+      openingTime:          openingTime     || "",
+      closingTime:          closingTime     || "",
+      priceRange:           priceRange      || "mid",
+      rating:               Number(rating)  || 0,
+      // Documents (Step 4)
+      fssaiNumber:          fssaiNumber     || "",
+      idProofType:          idProofType     || "aadhar",
+      idProof:              safeIdProof,          // ← Cloudinary URL only
+      subscriptionPlan:     subscriptionPlan     || "",
+      subscriptionDuration: subscriptionDuration || "",
       subscriptionPrice:    Number(subscriptionPrice) || 0,
       appliedAt:            new Date(),
     };
@@ -45,10 +71,8 @@ export const applyForOwner = async (req, res) => {
 };
 
 export const getProfile = (req, res) => {
-
-
   res.status(200).json({
     message: "Profile fetched successfully",
-    user: req.user
+    user: req.user,
   });
 };

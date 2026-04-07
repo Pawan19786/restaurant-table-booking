@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
+import { useTheme } from "../context/ThemeContext";
 
 interface Restaurant {
   _id: string;
@@ -15,22 +16,40 @@ interface Restaurant {
   priceRange: string;
   image: string;
   isActive: boolean;
+  reviewCount: number;
+  latestReview: {
+    rating: number;
+    comment: string;
+    userName: string;
+  } | null;
 }
 
 const CUISINES = ["All", "Indian", "Italian", "Chinese", "Mexican", "Japanese", "Thai", "Continental", "Middle Eastern", "American", "Mediterranean"];
 const PRICES   = ["All", "₹", "₹₹", "₹₹₹"];
 
+const parseTime = (timeStr: string) => {
+  if (!timeStr) return 0;
+  const hm = timeStr.replace(/(AM|PM)/i, "").trim().split(":");
+  let h = parseInt(hm[0] || "0", 10);
+  const m = parseInt(hm[1] || "0", 10);
+  if (timeStr.toUpperCase().includes("PM") && h < 12) h += 12;
+  if (timeStr.toUpperCase().includes("AM") && h === 12) h = 0;
+  return h * 60 + m;
+};
+
 const isOpenNow = (opening: string, closing: string) => {
   if (!opening || !closing) return false;
   const now = new Date();
   const cur = now.getHours() * 60 + now.getMinutes();
-  const [oh, om] = opening.split(":").map(Number);
-  const [ch, cm] = closing.split(":").map(Number);
-  return cur >= oh * 60 + om && cur <= ch * 60 + cm;
+  const start = parseTime(opening);
+  const end = parseTime(closing);
+  if (end < start) return cur >= start || cur <= end;
+  return cur >= start && cur <= end;
 };
 
 export default function Restaurantlisting(){
   const navigate = useNavigate();
+  const { isDark } = useTheme();
   const heroRef  = useRef<HTMLDivElement>(null);
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -78,7 +97,6 @@ export default function Restaurantlisting(){
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
-        body{background:#080a0e;color:#f0ece4}
 
         @keyframes rl-fadeUp   {from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
         @keyframes rl-slideIn  {from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
@@ -90,6 +108,7 @@ export default function Restaurantlisting(){
         .rl-root {
           min-height:100vh;
           background:#080a0e;
+          color:#f0ece4;
           font-family:'DM Sans',sans-serif;
         }
 
@@ -222,7 +241,7 @@ export default function Restaurantlisting(){
 
         .rl-sort {
           margin-left:auto;
-          background:rgba(255,255,255,0.04);
+          background:#080a0e;
           border:1px solid rgba(255,255,255,0.08);
           border-radius:8px; padding:7px 12px;
           font-family:'DM Sans',sans-serif; font-size:12px;
@@ -321,6 +340,42 @@ export default function Restaurantlisting(){
           background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08);
           color:rgba(240,236,228,0.5); letter-spacing:0.04em;
         }
+        /* ── STARS ── */
+        .rl-stars { display:flex; align-items:center; gap:2px; }
+        .rl-star { font-size:12px; line-height:1; }
+        .rl-star.filled { color:#fbbf24; }
+        .rl-star.empty  { color:rgba(255,255,255,0.15); }
+
+        /* ── REVIEW SNIPPET ── */
+        .rl-review-snip {
+          margin:10px 0;
+          padding:10px 12px;
+          background:rgba(251,191,36,0.04);
+          border:1px solid rgba(251,191,36,0.1);
+          border-radius:10px;
+        }
+        .rl-review-snip-top {
+          display:flex; align-items:center; gap:6px; margin-bottom:4px;
+        }
+        .rl-review-snip-user {
+          font-size:11px; font-weight:600; color:rgba(240,236,228,0.6);
+        }
+        .rl-review-snip-text {
+          font-size:11px; color:rgba(240,236,228,0.4);
+          line-height:1.5;
+          display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+        }
+        .rl-review-count {
+          font-size:10px; color:rgba(240,236,228,0.3);
+          margin-left:auto; white-space:nowrap;
+        }
+
+        /* ── PRICE LABEL ── */
+        .rl-price-label {
+          font-size:10px; color:rgba(251,191,36,0.6);
+          letter-spacing:0.04em;
+        }
+
         .rl-card-footer {
           display:flex; align-items:center; justify-content:space-between;
           padding-top:14px; border-top:1px solid rgba(255,255,255,0.06);
@@ -372,9 +427,60 @@ export default function Restaurantlisting(){
           backdrop-filter:blur(20px);
         }
         .rl-back:hover { border-color:rgba(251,191,36,0.3); color:#fbbf24; }
+
+        /* ════════════ LIGHT THEME ════════════ */
+        .rl-root.light { background:#f8fafc; color:#0f172a; }
+        .rl-root.light .rl-hero-bg { background:linear-gradient(135deg,#f1f5f9 0%,#e2e8f0 40%,#cbd5e1 100%); }
+        .rl-root.light .rl-hero-overlay {
+          background:radial-gradient(ellipse at 30% 50%,rgba(217,119,6,0.12) 0%,transparent 40%),
+                     radial-gradient(ellipse at 70% 30%,rgba(5,150,105,0.08) 0%,transparent 40%);
+        }
+        .rl-root.light .rl-hero-tag { background:rgba(217,119,6,0.1); border-color:rgba(217,119,6,0.25); color:#92400e; }
+        .rl-root.light .rl-hero-title { color:#0f172a; }
+        .rl-root.light .rl-hero-sub { color:#475569; }
+        .rl-root.light .rl-search {
+          background:rgba(255,255,255,0.6); border-color:rgba(148,163,184,0.4); color:#0f172a;
+        }
+        .rl-root.light .rl-search:focus { border-color:rgba(217,119,6,0.5); background:#ffffff; box-shadow:0 0 0 3px rgba(217,119,6,0.15); }
+        .rl-root.light .rl-search::placeholder { color:#94a3b8; }
+        .rl-root.light .rl-search-icon { color:#b45309; }
+        .rl-root.light .rl-stats { background:rgba(255,255,255,0.7); border-bottom-color:rgba(203,213,225,0.5); }
+        .rl-root.light .rl-stat-num { color:#d97706; }
+        .rl-root.light .rl-stat-lbl { color:#64748b; }
+        .rl-root.light .rl-filters { background:rgba(248,250,252,0.92); border-bottom-color:rgba(203,213,225,0.5); }
+        .rl-root.light .rl-filter-label { color:#64748b; }
+        .rl-root.light .rl-pill { background:#ffffff; border-color:rgba(203,213,225,0.6); color:#475569; }
+        .rl-root.light .rl-pill:hover { border-color:rgba(217,119,6,0.4); color:#b45309; }
+        .rl-root.light .rl-pill.active { background:#fef3c7; border-color:rgba(217,119,6,0.4); color:#92400e; }
+        .rl-root.light .rl-toggle { background:#ffffff; border-color:rgba(203,213,225,0.6); color:#475569; }
+        .rl-root.light .rl-toggle.active { background:#d1fae5; border-color:rgba(5,150,105,0.3); color:#047857; }
+        .rl-root.light .rl-sort { background:#ffffff; border-color:rgba(203,213,225,0.6); color:#475569; }
+        .rl-root.light .rl-section-title { color:#0f172a; }
+        .rl-root.light .rl-section-count { color:#64748b; }
+        .rl-root.light .rl-card { background:#ffffff; border-color:rgba(203,213,225,0.6); box-shadow:0 4px 12px rgba(0,0,0,0.04); }
+        .rl-root.light .rl-card:hover { border-color:rgba(217,119,6,0.3); box-shadow:0 16px 36px rgba(0,0,0,0.1), 0 0 0 1px rgba(217,119,6,0.15); }
+        .rl-root.light .rl-card-img-placeholder { background:linear-gradient(135deg,#f1f5f9,#e2e8f0); }
+        .rl-root.light .rl-card-img-overlay { background:linear-gradient(to top, rgba(255,255,255,0.6) 0%, transparent 40%); }
+        .rl-root.light .rl-card-rating { background:rgba(255,255,255,0.9); border-color:rgba(217,119,6,0.3); color:#d97706; }
+        .rl-root.light .rl-card-name { color:#0f172a; }
+        .rl-root.light .rl-card-city { color:#64748b; }
+        .rl-root.light .rl-cuisine-tag { background:#f1f5f9; border-color:rgba(203,213,225,0.8); color:#475569; }
+        .rl-root.light .rl-review-count { color:#94a3b8; }
+        .rl-root.light .rl-price-label { color:#d97706; }
+        .rl-root.light .rl-review-snip { background:#fef3c7; border-color:rgba(25fbbf24,0.1); }
+        .rl-root.light .rl-review-snip-user { color:#475569; }
+        .rl-root.light .rl-review-snip-text { color:#64748b; }
+        .rl-root.light .rl-card-footer { border-top-color:rgba(203,213,225,0.4); }
+        .rl-root.light .rl-card-timing { color:#64748b; }
+        .rl-root.light .rl-btn-book { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#0f172a; }
+        .rl-root.light .rl-empty-title { color:#0f172a; }
+        .rl-root.light .rl-empty-sub { color:#64748b; }
+        .rl-root.light .rl-skeleton { background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%); background-size:200% auto; }
+        .rl-root.light .rl-back { background:rgba(255,255,255,0.8); border-color:rgba(203,213,225,0.6); color:#475569; box-shadow:0 4px 12px rgba(0,0,0,0.05); }
+        .rl-root.light .rl-back:hover { border-color:rgba(217,119,6,0.4); color:#d97706; }
       `}</style>
 
-      <div className="rl-root">
+      <div className={`rl-root${!isDark ? " light" : ""}`}>
 
         {/* Back button */}
         <button className="rl-back" onClick={() => navigate("/dashboard")}>
@@ -383,8 +489,8 @@ export default function Restaurantlisting(){
         </button>
 
         {/* ── HERO ── */}
-        <div className="rl-hero" ref={heroRef} style={{ transform:`translateY(${scrollY * 0.3}px)` }}>
-          <div className="rl-hero-bg"/>
+        <div className="rl-hero" ref={heroRef}>
+          <div className="rl-hero-bg" style={{ transform:`translateY(${scrollY * 0.3}px)` }}/>
           <div className="rl-hero-overlay"/>
           <div className="rl-hero-grain"/>
           <div className="rl-hero-content">
@@ -501,10 +607,14 @@ export default function Restaurantlisting(){
                         <span className="rl-badge rl-badge-price">{r.priceRange}</span>
                       </div>
 
-                      {/* Rating */}
+                      {/* Star Rating */}
                       {r.rating > 0 && (
                         <div className="rl-card-rating">
-                          ★ {r.rating.toFixed(1)}
+                          <span style={{fontSize:11}}>★</span>
+                          {r.rating.toFixed(1)}
+                          {r.reviewCount > 0 && (
+                            <span style={{fontSize:9,color:"rgba(240,236,228,0.4)",marginLeft:2}}>({r.reviewCount})</span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -512,10 +622,34 @@ export default function Restaurantlisting(){
                     {/* Body */}
                     <div className="rl-card-body">
                       <div className="rl-card-name">{r.name}</div>
+
+                      {/* Location — address + city */}
                       <div className="rl-card-city">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                        {r.city}
+                        {r.address ? `${r.address}, ${r.city}` : r.city}
                       </div>
+
+                      {/* Pricing */}
+                      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+                        <span style={{fontSize:11,color:"rgba(251,191,36,0.5)"}}>💰</span>
+                        <span style={{fontSize:11,color:"rgba(251,191,36,0.7)",fontWeight:600}}>{r.priceRange}</span>
+                        <span className="rl-price-label">per table</span>
+                      </div>
+
+                      {/* Star display row */}
+                      {r.rating > 0 && (
+                        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+                          <div className="rl-stars">
+                            {[1,2,3,4,5].map(s => (
+                              <span key={s} className={`rl-star ${s <= Math.round(r.rating) ? "filled" : "empty"}`}>★</span>
+                            ))}
+                          </div>
+                          <span style={{fontSize:11,color:"rgba(240,236,228,0.5)"}}>{r.rating.toFixed(1)}</span>
+                          {r.reviewCount > 0 && (
+                            <span className="rl-review-count">{r.reviewCount} review{r.reviewCount !== 1 ? "s" : ""}</span>
+                          )}
+                        </div>
+                      )}
 
                       {r.cuisineTypes.length > 0 && (
                         <div className="rl-card-cuisines">
@@ -525,6 +659,23 @@ export default function Restaurantlisting(){
                           {r.cuisineTypes.length > 3 && (
                             <span className="rl-cuisine-tag">+{r.cuisineTypes.length - 3}</span>
                           )}
+                        </div>
+                      )}
+
+                      {/* Latest review snippet */}
+                      {r.latestReview?.comment && (
+                        <div className="rl-review-snip">
+                          <div className="rl-review-snip-top">
+                            <div className="rl-stars" style={{gap:1}}>
+                              {[1,2,3,4,5].map(s => (
+                                <span key={s} style={{fontSize:10,color:s<=r.latestReview!.rating?"#fbbf24":"rgba(255,255,255,0.15)"}}>★</span>
+                              ))}
+                            </div>
+                            <span className="rl-review-snip-user">— {r.latestReview.userName}</span>
+                          </div>
+                          <div className="rl-review-snip-text">
+                            "{r.latestReview.comment}"
+                          </div>
                         </div>
                       )}
 

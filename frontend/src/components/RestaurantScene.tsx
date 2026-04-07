@@ -29,24 +29,30 @@ export default function RestaurantScene() {
   const dashOpacity = lerp(0, 1, dashE);
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-black">
+    <div className={`relative w-full bg-black ${progress < 1 ? "h-screen overflow-hidden" : "min-h-screen"}`}>
       <div
-        className="absolute inset-0"
-        style={{ transform: `translateY(${dashY}px)`, opacity: dashOpacity }}
+        className={progress < 1 ? "absolute inset-0" : "relative w-full"}
+        style={
+          progress < 1
+            ? { transform: `translateY(${dashY}px)`, opacity: dashOpacity }
+            : { transform: "none", opacity: 1 }
+        }
       >
         <HeroSection />
       </div>
 
-      <div
-        className="absolute inset-0 z-50"
-        style={{
-          transform: `translateY(${splashY}%)`,
-          opacity: splashOpacity,
-          willChange: "transform, opacity",
-        }}
-      >
-        <SplashUI />
-      </div>
+      {progress < 1 && (
+        <div
+          className="absolute inset-0 z-50"
+          style={{
+            transform: `translateY(${splashY}%)`,
+            opacity: splashOpacity,
+            willChange: "transform, opacity",
+          }}
+        >
+          <SplashUI />
+        </div>
+      )}
 
       {progress < 1 && (
         <div className="absolute bottom-6 left-1/2 z-[60] -translate-x-1/2 rounded-full bg-black/40 px-5 py-2 text-[9px] tracking-[0.35em] text-[#caa561] backdrop-blur border border-[#caa561]/15">

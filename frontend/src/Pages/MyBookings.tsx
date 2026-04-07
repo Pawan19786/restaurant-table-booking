@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import { useTheme } from "../context/ThemeContext";
 import api from "../api/api";
 
 interface Booking {
@@ -10,23 +11,27 @@ interface Booking {
   timeSlot: string;
   guests: number;
   specialRequest: string;
-  status: "pending"|"confirmed"|"rejected"|"cancelled";
+  status: "pending"|"confirmed"|"preparing"|"out_for_delivery"|"delivered"|"rejected"|"cancelled";
   rejectionReason: string;
   createdAt: string;
 }
 
 const STATUS_STYLE: Record<string, { bg:string; border:string; color:string; label:string; icon:string }> = {
-  pending:   { bg:"rgba(251,191,36,0.1)",  border:"rgba(251,191,36,0.3)",  color:"#fbbf24", label:"Pending",   icon:"⏳" },
-  confirmed: { bg:"rgba(16,185,129,0.1)",  border:"rgba(16,185,129,0.3)",  color:"#10b981", label:"Confirmed", icon:"✅" },
-  rejected:  { bg:"rgba(239,68,68,0.1)",   border:"rgba(239,68,68,0.3)",   color:"#f87171", label:"Rejected",  icon:"❌" },
-  cancelled: { bg:"rgba(148,163,184,0.1)", border:"rgba(148,163,184,0.25)",color:"#94a3b8", label:"Cancelled", icon:"🚫" },
+  pending:          { bg:"rgba(251,191,36,0.1)",  border:"rgba(251,191,36,0.3)",  color:"#fbbf24", label:"Pending",      icon:"⏳" },
+  confirmed:        { bg:"rgba(16,185,129,0.1)",  border:"rgba(16,185,129,0.3)",  color:"#10b981", label:"Confirmed",    icon:"✅" },
+  preparing:        { bg:"rgba(59,130,246,0.1)",  border:"rgba(59,130,246,0.3)",  color:"#3b82f6", label:"Preparing",    icon:"🍳" },
+  out_for_delivery: { bg:"rgba(168,85,247,0.1)",  border:"rgba(168,85,247,0.3)",  color:"#a855f7", label:"On the Way",   icon:"🛵" },
+  delivered:        { bg:"rgba(16,185,129,0.1)",  border:"rgba(16,185,129,0.3)",  color:"#10b981", label:"Delivered",    icon:"🎉" },
+  rejected:         { bg:"rgba(239,68,68,0.1)",   border:"rgba(239,68,68,0.3)",   color:"#f87171", label:"Rejected",     icon:"❌" },
+  cancelled:        { bg:"rgba(148,163,184,0.1)", border:"rgba(148,163,184,0.25)",color:"#94a3b8", label:"Cancelled",    icon:"🚫" },
 };
 
 export default function MyBookings() {
   const navigate = useNavigate();
+  const { isDark } = useTheme();
   const [bookings,   setBookings]   = useState<Booking[]>([]);
   const [loading,    setLoading]    = useState(true);
-  const [filter,     setFilter]     = useState<"all"|"pending"|"confirmed"|"rejected"|"cancelled">("all");
+  const [filter,     setFilter]     = useState<"all"|"pending"|"confirmed"|"preparing"|"out_for_delivery"|"delivered"|"rejected"|"cancelled">("all");
   const [cancelling, setCancelling] = useState<string|null>(null);
 
   const fetchBookings = () => {
@@ -34,7 +39,15 @@ export default function MyBookings() {
     setLoading(true);
     api.get("/bookings/my", { headers: { Authorization: `Bearer ${token}` } })
       .then(res => setBookings(res.data.bookings || []))
-      .catch(() => toast.error("Failed to load bookings"))
+      .catch((err) => {
+        // 404 = no bookings found → silently show empty state
+        // Only toast on real server errors (5xx)
+        const status = err?.response?.status;
+        if (status && status >= 500) {
+          toast.error("Server error. Please try again later.");
+        }
+        setBookings([]);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -58,11 +71,14 @@ export default function MyBookings() {
   const filtered = filter === "all" ? bookings : bookings.filter(b => b.status === filter);
 
   const counts = {
-    all:       bookings.length,
-    pending:   bookings.filter(b => b.status === "pending").length,
-    confirmed: bookings.filter(b => b.status === "confirmed").length,
-    rejected:  bookings.filter(b => b.status === "rejected").length,
-    cancelled: bookings.filter(b => b.status === "cancelled").length,
+    all:              bookings.length,
+    pending:          bookings.filter(b => b.status === "pending").length,
+    confirmed:        bookings.filter(b => b.status === "confirmed").length,
+    preparing:        bookings.filter(b => b.status === "preparing").length,
+    out_for_delivery: bookings.filter(b => b.status === "out_for_delivery").length,
+    delivered:        bookings.filter(b => b.status === "delivered").length,
+    rejected:         bookings.filter(b => b.status === "rejected").length,
+    cancelled:        bookings.filter(b => b.status === "cancelled").length,
   };
 
   return (
@@ -70,7 +86,6 @@ export default function MyBookings() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
-        body{background:#080a0e}
         @keyframes mb-fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
         @keyframes mb-spin{to{transform:rotate(360deg)}}
         @keyframes mb-shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
@@ -129,9 +144,42 @@ export default function MyBookings() {
 
         .mb-skeleton{background:linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.07) 50%,rgba(255,255,255,0.04) 75%);background-size:200% auto;animation:mb-shimmer 1.5s linear infinite;border-radius:8px}
         .mb-spinner{width:14px;height:14px;border-radius:50%;border:2px solid rgba(240,68,68,0.2);border-top-color:#f87171;animation:mb-spin 0.7s linear infinite;display:inline-block}
+
+        /* ════════════ LIGHT THEME ════════════ */
+        .mb-root.light { background:#f8fafc; color:#0f172a; }
+        .mb-root.light .mb-back { background:#ffffff; border-color:rgba(203,213,225,0.6); color:#475569; }
+        .mb-root.light .mb-back:hover { border-color:rgba(217,119,6,0.3); color:#d97706; }
+        .mb-root.light .mb-title { color:#0f172a; }
+        .mb-root.light .mb-sub { color:#64748b; }
+        .mb-root.light .mb-filter { background:#ffffff; border-color:rgba(203,213,225,0.6); color:#475569; }
+        .mb-root.light .mb-filter:hover { border-color:rgba(217,119,6,0.3); color:#b45309; }
+        .mb-root.light .mb-filter.active { background:#fef3c7; border-color:rgba(217,119,6,0.3); color:#b45309; }
+        .mb-root.light .mb-count { background:rgba(203,213,225,0.4); color:#475569; }
+        .mb-root.light .mb-filter.active .mb-count { background:rgba(217,119,6,0.1); color:#b45309; }
+
+        .mb-root.light .mb-card { background:#ffffff; border-color:rgba(203,213,225,0.6); box-shadow:0 4px 12px rgba(0,0,0,0.03); }
+        .mb-root.light .mb-card:hover { border-color:rgba(217,119,6,0.3); box-shadow:0 12px 24px rgba(0,0,0,0.08); }
+        .mb-root.light .mb-rest-img-ph { background:linear-gradient(135deg,#f1f5f9,#e2e8f0); }
+        .mb-root.light .mb-rest-name { color:#0f172a; }
+        .mb-root.light .mb-rest-name:hover { color:#d97706; }
+        .mb-root.light .mb-rest-city { color:#64748b; }
+        .mb-root.light .mb-detail { color:#64748b; }
+        .mb-root.light .mb-empty-title { color:#0f172a; }
+        .mb-root.light .mb-empty-sub { color:#64748b; }
+
+        .mb-root.light .mb-created { color:#94a3b8; }
+        .mb-root.light .mb-card-footer { border-top-color:rgba(203,213,225,0.6); }
+        .mb-root.light .mb-btn-view { background:#f8fafc; border-color:rgba(203,213,225,0.6); color:#475569; }
+        .mb-root.light .mb-btn-view:hover { border-color:rgba(217,119,6,0.3); color:#d97706; }
+        .mb-root.light .mb-btn-cancel { background:#fef2f2; border-color:rgba(252,165,165,0.4); color:#dc2626; }
+        .mb-root.light .mb-btn-cancel:hover { background:#fee2e2; border-color:rgba(252,165,165,0.6); }
+
+        .mb-root.light .mb-rejection { background:#fef2f2; border-top-color:rgba(252,165,165,0.4); color:#b91c1c; }
+        .mb-root.light .mb-special { background:#fffbeb; border-top-color:rgba(253,230,138,0.4); color:#92400e; }
+        .mb-root.light .mb-skeleton { background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%); background-size:200% auto; }
       `}</style>
 
-      <div className="mb-root">
+      <div className={`mb-root${!isDark ? " light" : ""}`}>
         <div className="mb-header">
           <button className="mb-back" onClick={() => navigate("/dashboard")}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>

@@ -1,10 +1,20 @@
+// ── Add these two imports to your existing navbar.tsx ─────────────────────────
+// import { NotificationBell } from "../context/NotificationContext";
+// import { useCart } from "../context/CartContext";
+//
+// Then add <NotificationBell theme={th} /> and cart badge inside nb-actions
+// This file shows the COMPLETE updated navbar with both additions.
+
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext"
+import { useAuth } from "../context/AuthContext";
+import { NotificationBell } from "../context/NotificationContext";
+import { useCart } from "../context/CartContext";
+import { useTheme } from "../context/ThemeContext";
 
 type NavbarProps = {
-  isDark: boolean;
-  setIsDark: React.Dispatch<React.SetStateAction<boolean>>;
+  isDark?: boolean;
+  setIsDark?: React.Dispatch<React.SetStateAction<boolean>>;
   onLoginOpen: () => void;
   onRegisterOpen: () => void;
   activeLink: string;
@@ -14,10 +24,10 @@ type NavbarProps = {
 const POPUP_ALLOWED_PATHS = ["/", "/contact"];
 
 export default function Navbar({
-  isDark, setIsDark,
   onLoginOpen, onRegisterOpen,
   activeLink, setActiveLink,
 }: NavbarProps) {
+  const { isDark, setIsDark } = useTheme();
   const [scrolled,     setScrolled]     = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownPos,  setDropdownPos]  = useState({ top: 0, right: 0 });
@@ -27,6 +37,8 @@ export default function Navbar({
   const location                         = useLocation();
 
   const { user, isLoggedIn, logout } = useAuth();
+  const { totalItems } = useCart();
+
   const userName    = user?.name    || localStorage.getItem("name")    || "User";
   const userEmail   = user?.email   || localStorage.getItem("email")   || "";
   const userRole    = user?.role    || localStorage.getItem("role")    || "user";
@@ -39,16 +51,10 @@ export default function Navbar({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // 🔧 FIX: Dropdown ka position avatar button ke neeche calculate karo
-  // position:fixed use karna zaroori hai taaki dashboard pages pe
-  // parent overflow:hidden se clip na ho
   const openDropdown = () => {
     if (avatarBtnRef.current) {
       const rect = avatarBtnRef.current.getBoundingClientRect();
-      setDropdownPos({
-        top:   rect.bottom + 10,
-        right: window.innerWidth - rect.right,
-      });
+      setDropdownPos({ top: rect.bottom + 10, right: window.innerWidth - rect.right });
     }
     setDropdownOpen(true);
   };
@@ -66,7 +72,6 @@ export default function Navbar({
 
   useEffect(() => { setDropdownOpen(false); }, [location.pathname]);
 
-  // Scroll/resize hone par dropdown reposition karo
   useEffect(() => {
     if (!dropdownOpen) return;
     const reposition = () => {
@@ -177,8 +182,6 @@ export default function Navbar({
         .nb-wrap.dark .nb-avatar-chevron{color:rgba(200,170,255,0.4)}
         .nb-wrap.light .nb-avatar-chevron{color:#94a3b8}
         .nb-avatar-chevron.open{transform:rotate(180deg)}
-
-        /* 🔧 KEY FIX: position:fixed — parent overflow clip se bach jayega */
         .nb-dropdown{position:fixed;min-width:240px;border-radius:16px;overflow:hidden;padding:8px;animation:nb-dd-in 0.22s cubic-bezier(0.16,1,0.3,1) both;z-index:9999}
         .nb-dropdown.dark{background:rgba(12,6,28,0.97);border:1px solid rgba(160,96,240,0.18);box-shadow:0 24px 60px rgba(0,0,0,0.7),0 0 0 1px rgba(160,96,240,0.08);backdrop-filter:blur(40px)}
         .nb-dropdown.light{background:rgba(255,255,255,0.98);border:1px solid rgba(226,232,240,0.8);box-shadow:0 10px 40px rgba(0,0,0,0.12)}
@@ -217,6 +220,14 @@ export default function Navbar({
         .nb-dd-sep{height:1px;margin:5px 0}
         .nb-dd-sep.dark{background:rgba(160,96,240,0.09)}
         .nb-dd-sep.light{background:#f1f5f9}
+
+        /* Cart button */
+        .nb-cart-btn{position:relative;width:38px;height:38px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s}
+        .nb-wrap.dark .nb-cart-btn{background:rgba(160,100,255,0.08);color:rgba(200,170,255,0.7)}
+        .nb-wrap.dark .nb-cart-btn:hover{background:rgba(160,100,255,0.15)}
+        .nb-wrap.light .nb-cart-btn{background:rgba(37,99,235,0.06);color:#64748b}
+        .nb-wrap.light .nb-cart-btn:hover{background:rgba(37,99,235,0.12)}
+        .nb-cart-badge{position:absolute;top:4px;right:4px;min-width:16px;height:16px;border-radius:8px;background:#fbbf24;color:#0f1117;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px}
       `}</style>
 
       <nav className={`nb-wrap ${th} ${scrolled ? "nb-scrolled" : ""}`}>
@@ -255,89 +266,109 @@ export default function Navbar({
             )}
 
             {isLoggedIn && (
-              <div className="nb-avatar-wrap">
-                <button
-                  ref={avatarBtnRef}
-                  className="nb-avatar-btn"
-                  onClick={() => dropdownOpen ? setDropdownOpen(false) : openDropdown()}
-                >
-                  <div className="nb-avatar-circle" style={!userPicture ? { background:`linear-gradient(135deg,${colorFrom},${colorTo})` } : {}}>
-                    {userPicture
-                      ? <img src={userPicture} alt={userName} style={{width:"100%",height:"100%",borderRadius:"50%",objectFit:"cover",display:"block"}} referrerPolicy="no-referrer"/>
-                      : userInitial
-                    }
-                  </div>
-                  <span className="nb-avatar-name">{userName}</span>
-                  <span className={`nb-avatar-chevron${dropdownOpen ? " open" : ""}`}>▼</span>
+              <>
+                {/* 🔔 Notification Bell */}
+                <NotificationBell theme={th} />
+
+                {/* 🛒 Cart Button */}
+                <button className="nb-cart-btn" onClick={() => navigate("/cart")} title="Cart">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                  </svg>
+                  {totalItems > 0 && (
+                    <span className="nb-cart-badge">{totalItems > 9 ? "9+" : totalItems}</span>
+                  )}
                 </button>
 
-                {dropdownOpen && (
-                  <div
-                    ref={dropdownRef}
-                    className={`nb-dropdown ${th}`}
-                    style={{ top: dropdownPos.top, right: dropdownPos.right }}
+                {/* 👤 Avatar */}
+                <div className="nb-avatar-wrap">
+                  <button
+                    ref={avatarBtnRef}
+                    className="nb-avatar-btn"
+                    onClick={() => dropdownOpen ? setDropdownOpen(false) : openDropdown()}
                   >
-                    <div className="nb-dd-header">
-                      <div className="nb-dd-av" style={!userPicture ? {background:`linear-gradient(135deg,${colorFrom},${colorTo})`} : {padding:0,overflow:"hidden"}}>
-                        {userPicture
-                          ? <img src={userPicture} alt={userName} style={{width:"100%",height:"100%",borderRadius:"50%",objectFit:"cover",display:"block"}} referrerPolicy="no-referrer"/>
-                          : userInitial
-                        }
-                      </div>
-                      <div>
-                        <div className={`nb-dd-name ${th}`}>{userName}</div>
-                        <div className={`nb-dd-email ${th}`}>{userEmail}</div>
-                      </div>
+                    <div className="nb-avatar-circle" style={!userPicture ? { background:`linear-gradient(135deg,${colorFrom},${colorTo})` } : {}}>
+                      {userPicture
+                        ? <img src={userPicture} alt={userName} style={{width:"100%",height:"100%",borderRadius:"50%",objectFit:"cover",display:"block"}} referrerPolicy="no-referrer"/>
+                        : userInitial
+                      }
                     </div>
+                    <span className="nb-avatar-name">{userName}</span>
+                    <span className={`nb-avatar-chevron${dropdownOpen ? " open" : ""}`}>▼</span>
+                  </button>
 
-                    <button className={`nb-dd-item ${th}`} onClick={() => { navigate("/dashboard"); setDropdownOpen(false); }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-                      My Profile
-                    </button>
+                  {dropdownOpen && (
+                    <div ref={dropdownRef} className={`nb-dropdown ${th}`} style={{ top: dropdownPos.top, right: dropdownPos.right }}>
+                      <div className="nb-dd-header">
+                        <div className="nb-dd-av" style={!userPicture ? {background:`linear-gradient(135deg,${colorFrom},${colorTo})`} : {padding:0,overflow:"hidden"}}>
+                          {userPicture
+                            ? <img src={userPicture} alt={userName} style={{width:"100%",height:"100%",borderRadius:"50%",objectFit:"cover",display:"block"}} referrerPolicy="no-referrer"/>
+                            : userInitial
+                          }
+                        </div>
+                        <div>
+                          <div className={`nb-dd-name ${th}`}>{userName}</div>
+                          <div className={`nb-dd-email ${th}`}>{userEmail}</div>
+                        </div>
+                      </div>
 
-                    <button className={`nb-dd-item ${th}`} onClick={() => { navigate("/restaurants"); setDropdownOpen(false); }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 2v7c0 1.1.9 2 2 2h4v11"/><path d="M9 2v20M18 2v6a4 4 0 01-4 4v10"/></svg>
-                      Browse Restaurants
-                    </button>
-
-                    <button className={`nb-dd-item ${th}`} onClick={() => { navigate("/my-bookings"); setDropdownOpen(false); }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                      My Bookings
-                    </button>
-
-                    {userRole === "user" && (
-                      <button className={`nb-dd-item nb-dd-become ${th}`} onClick={() => { navigate("/apply-owner"); setDropdownOpen(false); }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                        Become an Owner
-                        <span className={`nb-dd-badge ${th}`} style={{background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.25)"}}>New</span>
+                      <button className={`nb-dd-item ${th}`} onClick={() => { navigate("/dashboard"); setDropdownOpen(false); }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                        My Profile
                       </button>
-                    )}
 
-                    {userRole === "owner" && (
-                      <button className={`nb-dd-item nb-dd-owner ${th}`} onClick={() => { navigate("/owner/dashboard"); setDropdownOpen(false); }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                        Owner Dashboard
-                        <span className={`nb-dd-badge ${th}`}>Owner</span>
+                      <button className={`nb-dd-item ${th}`} onClick={() => { navigate("/restaurants"); setDropdownOpen(false); }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 2v7c0 1.1.9 2 2 2h4v11"/><path d="M9 2v20M18 2v6a4 4 0 01-4 4v10"/></svg>
+                        Browse Restaurants
                       </button>
-                    )}
 
-                    {userRole === "superadmin" && (
-                      <button className={`nb-dd-item nb-dd-admin ${th}`} onClick={() => { navigate("/admin/dashboard"); setDropdownOpen(false); }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-                        Admin Panel
-                        <span className={`nb-dd-badge ${th}`}>Admin</span>
+                      <button className={`nb-dd-item ${th}`} onClick={() => { navigate("/my-bookings"); setDropdownOpen(false); }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                        My Bookings
                       </button>
-                    )}
 
-                    <div className={`nb-dd-sep ${th}`}/>
+                      {/* Cart shortcut */}
+                      <button className={`nb-dd-item ${th}`} onClick={() => { navigate("/cart"); setDropdownOpen(false); }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                        My Cart
+                        {totalItems > 0 && <span className={`nb-dd-badge ${th}`} style={{background:"rgba(251,191,36,0.18)",color:"#fbbf24",border:"1px solid rgba(251,191,36,0.3)"}}>{totalItems}</span>}
+                      </button>
 
-                    <button className={`nb-dd-item nb-dd-logout ${th}`} onClick={handleLogout}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
+                      {userRole === "user" && (
+                        <button className={`nb-dd-item nb-dd-become ${th}`} onClick={() => { navigate("/apply-owner"); setDropdownOpen(false); }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                          Become an Owner
+                          <span className={`nb-dd-badge ${th}`} style={{background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.25)"}}>New</span>
+                        </button>
+                      )}
+
+                      {userRole === "owner" && (
+                        <button className={`nb-dd-item nb-dd-owner ${th}`} onClick={() => { navigate("/owner/dashboard"); setDropdownOpen(false); }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                          Owner Dashboard
+                          <span className={`nb-dd-badge ${th}`}>Owner</span>
+                        </button>
+                      )}
+
+                      {userRole === "superadmin" && (
+                        <button className={`nb-dd-item nb-dd-admin ${th}`} onClick={() => { navigate("/admin/dashboard"); setDropdownOpen(false); }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                          Admin Panel
+                          <span className={`nb-dd-badge ${th}`}>Admin</span>
+                        </button>
+                      )}
+
+                      <div className={`nb-dd-sep ${th}`}/>
+
+                      <button className={`nb-dd-item nb-dd-logout ${th}`} onClick={handleLogout}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>

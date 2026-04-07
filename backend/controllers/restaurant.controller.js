@@ -1,6 +1,7 @@
 import Restaurant from "../models/Restaurant.model.js";
-import FoodItem   from "../models/FoodItem.model.js";
+import FoodItem   from "../models/Fooditem.model.js";
 import User       from "../models/User.model.js";
+import Review     from "../models/review.model.js";
 import cloudinary from "../config/Cloudinary.config.js";
 
 // ── Helper: check ownership ───────────────────────────────────
@@ -19,8 +20,52 @@ export const getAllRestaurants = async (req, res) => {
     const restaurants = await Restaurant.find()
       .populate("addedBy", "name email role")
       .sort({ createdAt: -1 });
-    res.status(200).json({ success: true, restaurants });
-  } catch {
+
+    // Fetch latest review + count for each restaurant in one go
+    const ids = restaurants.map(r => r._id);
+
+    const [reviewCounts, latestReviews] = await Promise.all([
+      Review.aggregate([
+        { $match: { restaurant: { $in: ids } } },
+        { $group: { _id: "$restaurant", count: { $sum: 1 } } },
+      ]),
+      Review.aggregate([
+        { $match: { restaurant: { $in: ids } } },
+        { $sort:  { createdAt: -1 } },
+        {
+          $group: {
+            _id:       "$restaurant",
+            latestRating:  { $first: "$rating" },
+            latestComment: { $first: "$comment" },
+            latestUserId:  { $first: "$user" },
+          },
+        },
+      ]),
+    ]);
+
+    // Populate user names for latest reviews
+    const userIds = latestReviews.map(r => r.latestUserId).filter(Boolean);
+    const users   = await User.find({ _id: { $in: userIds } }, "name");
+    const userMap = Object.fromEntries(users.map(u => [u._id.toString(), u.name]));
+
+    const countMap  = Object.fromEntries(reviewCounts.map(r => [r._id.toString(), r.count]));
+    const reviewMap = Object.fromEntries(
+      latestReviews.map(r => [r._id.toString(), {
+        rating:   r.latestRating,
+        comment:  r.latestComment,
+        userName: userMap[r.latestUserId?.toString()] || "Guest",
+      }])
+    );
+
+    const enriched = restaurants.map(r => ({
+      ...r.toObject(),
+      reviewCount:  countMap[r._id.toString()] || 0,
+      latestReview: reviewMap[r._id.toString()] || null,
+    }));
+
+    res.status(200).json({ success: true, restaurants: enriched });
+  } catch (err) {
+    console.error("getAllRestaurants error:", err);
     res.status(500).json({ message: "Failed to fetch restaurants" });
   }
 };
@@ -53,12 +98,39 @@ export const getMyRestaurant = async (req, res) => {
   }
 };
 
-// Superadmin — create restaurant
+// Owner's all restaurants
+export const getMyRestaurants = async (req, res) => {
+  try {
+    const restaurants = await Restaurant.find({ addedBy: req.user._id });
+    
+    const restaurantIds = restaurants.map(r => r._id);
+    const foodItems = await FoodItem.find({ restaurant: { $in: restaurantIds } }).sort({ category: 1 });
+    
+    // Pass user data to include subscription Plan
+    const user = await User.findById(req.user._id);
+
+    res.status(200).json({ success: true, restaurants, foodItems, user });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch your restaurants" });
+  }
+};
+
+// Superadmin or Owner — create restaurant
 export const createRestaurant = async (req, res) => {
   try {
+    if (req.user.role === "owner") {
+      const user = await User.findById(req.user._id);
+      const plan = user.ownerApplication?.subscriptionPlan?.toLowerCase() || "silver";
+      const limit = (plan.includes("platinum") || plan.includes("diamond")) ? 8 : plan.includes("gold") ? 5 : 1;
+      
+      const count = await Restaurant.countDocuments({ addedBy: req.user._id });
+      if (count >= limit) {
+        return res.status(403).json({ message: `Your ${plan.toUpperCase()} plan only allows up to ${limit} restaurant(s).` });
+      }
+    }
     const { name, description, address, city, phoneNumber, managerContact,
       telNumber, cuisineTypes, openingTime, closingTime, rating,
-      priceRange, image, imagePublicId } = req.body;
+      priceRange, image, imagePublicId, venueType, events, offers } = req.body;
 
     if (!name || !address || !city)
       return res.status(400).json({ message: "Name, address and city are required" });
@@ -69,6 +141,7 @@ export const createRestaurant = async (req, res) => {
       openingTime, closingTime,
       rating: rating || 0, priceRange: priceRange || "₹₹",
       image: image || "", imagePublicId: imagePublicId || "",
+      venueType: venueType || "dining", events: events || [], offers: offers || [],
       isActive: true, addedBy: req.user._id,
     });
 

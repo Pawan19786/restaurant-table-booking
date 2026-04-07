@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/navbar";
 import LoginModal from "./Login";
 import RegisterModal from "./Register";
+import { useTheme } from "../context/ThemeContext";
 
 const PARTICLES = [
   { size: 4, y: "8%",  dur: "16s", delay: "0s",  dir: "ltr" },
@@ -53,7 +54,7 @@ interface FormState {
 }
 
 export default function Contact() {
-  const [isDark, setIsDark]             = useState(true);
+  const { isDark } = useTheme();
   const [activeLink, setActiveLink]     = useState("Contact");
   const [openLoginModal, setOpenLogin]  = useState(false);
   const [openRegisterModal, setOpenReg] = useState(false);
@@ -139,7 +140,6 @@ export default function Contact() {
 
       <div className="relative z-10">
         <Navbar
-          isDark={isDark} setIsDark={setIsDark}
           onLoginOpen={() => setOpenLogin(true)}
           onRegisterOpen={() => setOpenReg(true)}
           activeLink={activeLink} setActiveLink={setActiveLink}
