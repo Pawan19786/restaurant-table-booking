@@ -62,24 +62,24 @@ function OrderForm({
   isDark: boolean;
   onClose: () => void;
 }) {
-  const stripe   = useStripe();
+  const stripe = useStripe();
   const elements = useElements();
 
-  const [step,          setStep]          = useState<1 | 2 | 3>(1);
-  const [foodItems,     setFoodItems]     = useState<FoodItem[]>([]);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [foodItems, setFoodItems] = useState<FoodItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<SelectedFoodItem[]>([]);
-  const [submitting,    setSubmitting]    = useState(false);
-  const [done,          setDone]          = useState(false);
-  const [orderId,       setOrderId]       = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+  const [orderId, setOrderId] = useState("");
 
-  const [name,         setName]         = useState(localStorage.getItem("name") || "");
-  const [phone,        setPhone]        = useState("");
-  const [address,      setAddress]      = useState("");
-  const [specialReq,   setSpecialReq]   = useState("");
+  const [name, setName] = useState(localStorage.getItem("name") || "");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [specialReq, setSpecialReq] = useState("");
   const [deliveryDate, setDeliveryDate] = useState(today());
-  const [payMethod,    setPayMethod]    = useState<"card" | "cod">("card");
-  const [cardError,    setCardError]    = useState("");
-  const [cardFocused,  setCardFocused]  = useState(false);
+  const [payMethod, setPayMethod] = useState<"card" | "cod">("card");
+  const [cardError, setCardError] = useState("");
+  const [cardFocused, setCardFocused] = useState(false);
 
   // ── Load menu ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -120,9 +120,9 @@ function OrderForm({
 
   // ── Submit: Stripe Payment Intent → save booking ──────────────────────────
   const handleSubmit = async () => {
-    if (!name.trim())                        { toast.error("Name required"); return; }
-    if (!phone.trim() || phone.length < 10)  { toast.error("Valid phone required"); return; }
-    if (!address.trim())                     { toast.error("Address required"); return; }
+    if (!name.trim()) { toast.error("Name required"); return; }
+    if (!phone.trim() || phone.length < 10) { toast.error("Valid phone required"); return; }
+    if (!address.trim()) { toast.error("Address required"); return; }
 
     setSubmitting(true);
     try {
@@ -133,9 +133,9 @@ function OrderForm({
         const intentRes = await api.post(
           "/payments/create-intent",
           {
-            amount:       Math.round(totalFood),
+            amount: Math.round(totalFood),
             restaurantId: restaurant._id,
-            items:        selectedItems.map((i) => ({ id: i._id, qty: i.qty })),
+            items: selectedItems.map((i) => ({ id: i._id, qty: i.qty })),
           },
           { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
         );
@@ -151,7 +151,7 @@ function OrderForm({
           payment_method: { card: cardElement, billing_details: { name, phone } },
         });
 
-        if (stripeError)                          { toast.error(stripeError.message || "Payment failed"); setSubmitting(false); return; }
+        if (stripeError) { toast.error(stripeError.message || "Payment failed"); setSubmitting(false); return; }
         if (paymentIntent?.status !== "succeeded") { toast.error("Payment not completed"); setSubmitting(false); return; }
 
         paymentStatus = "paid";
@@ -161,21 +161,21 @@ function OrderForm({
       const res = await api.post(
         "/bookings",
         {
-          restaurantId:  restaurant._id,
-          date:          deliveryDate,
-          timeSlot:      "Delivery ASAP",
-          orderType:     "delivery",          // ← tells backend to skip slot check
-          guests:        1,
+          restaurantId: restaurant._id,
+          date: deliveryDate,
+          timeSlot: "Delivery ASAP",
+          orderType: "delivery",          // ← tells backend to skip slot check
+          guests: 1,
           specialRequest: specialReq,
-          foodItems:     selectedItems.map((i) => ({
+          foodItems: selectedItems.map((i) => ({
             foodItemId: i._id,
-            name:       i.name,
-            qty:        i.qty,
-            price:      i.price,
-            offer:      i.offer,
+            name: i.name,
+            qty: i.qty,
+            price: i.price,
+            offer: i.offer,
           })),
           deliveryDetails: { name, phone, address, payMethod },
-          totalAmount:   Math.round(totalFood),
+          totalAmount: Math.round(totalFood),
           paymentStatus,
         },
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
@@ -453,7 +453,7 @@ function OrderForm({
                         </div>
                       ) : foodItems.map((item) => {
                         const qty = getQty(item._id);
-                        const dp  = item.offer > 0 ? item.price * (1 - item.offer / 100) : item.price;
+                        const dp = item.offer > 0 ? item.price * (1 - item.offer / 100) : item.price;
                         return (
                           <div key={item._id} className="om-food-card">
                             {item.image ? <img src={item.image} alt={item.name} className="om-food-img" /> : <div className="om-food-img-ph">🍱</div>}
@@ -547,7 +547,7 @@ function OrderForm({
                     <div className="om-pay-grid">
                       {([
                         { id: "card", icon: "💳", label: "Pay by Card" },
-                        { id: "cod",  icon: "💵", label: "Cash on Delivery" },
+                        { id: "cod", icon: "💵", label: "Cash on Delivery" },
                       ] as const).map((p) => (
                         <button key={p.id} className={`om-pay-btn ${payMethod === p.id ? "sel" : ""}`} onClick={() => setPayMethod(p.id)}>
                           <span className="om-pay-icon">{p.icon}</span>
