@@ -1,6 +1,6 @@
-import Review     from "../models/review.model.js";
-import Restaurant from "../models/Restaurant.model.js";
-import Booking    from "../models/Booking.model.js";
+import Review from "../models/review.model.js";
+import Restaurant from "../models/restaurant.model.js";
+import Booking from "../models/Booking.model.js";
 
 // ── POST /api/reviews  (create or update own review) ─────────
 export const createOrUpdateReview = async (req, res) => {
@@ -19,27 +19,27 @@ export const createOrUpdateReview = async (req, res) => {
 
     // Check if user has a completed / confirmed booking at this restaurant
     const verifiedBooking = await Booking.findOne({
-      user:       userId,
+      user: userId,
       restaurant: restaurantId,
-      status:     { $in: ["confirmed", "delivered"] },
+      status: { $in: ["confirmed", "delivered"] },
     });
 
     const existing = await Review.findOne({ user: userId, restaurant: restaurantId });
 
     let review;
     if (existing) {
-      existing.rating    = rating;
-      existing.comment   = comment || "";
+      existing.rating = rating;
+      existing.comment = comment || "";
       existing.isVerified = !!verifiedBooking;
       if (verifiedBooking) existing.booking = verifiedBooking._id;
       review = await existing.save();
     } else {
       review = await Review.create({
-        user:       userId,
+        user: userId,
         restaurant: restaurantId,
-        booking:    verifiedBooking?._id || null,
+        booking: verifiedBooking?._id || null,
         rating,
-        comment:    comment || "",
+        comment: comment || "",
         isVerified: !!verifiedBooking,
       });
     }
@@ -74,7 +74,7 @@ export const getReviewsByRestaurant = async (req, res) => {
       success: true,
       reviews,
       averageRating: Math.round(avg * 10) / 10,
-      totalReviews:  reviews.length,
+      totalReviews: reviews.length,
     });
   } catch {
     return res.status(500).json({ message: "Failed to fetch reviews" });
@@ -85,7 +85,7 @@ export const getReviewsByRestaurant = async (req, res) => {
 export const getMyReview = async (req, res) => {
   try {
     const review = await Review.findOne({
-      user:       req.user._id,
+      user: req.user._id,
       restaurant: req.params.restaurantId,
     });
     return res.status(200).json({ success: true, review: review || null });
@@ -98,7 +98,7 @@ export const getMyReview = async (req, res) => {
 export const deleteReview = async (req, res) => {
   try {
     const review = await Review.findOne({
-      user:       req.user._id,
+      user: req.user._id,
       restaurant: req.params.restaurantId,
     });
     if (!review) return res.status(404).json({ message: "Review not found" });
