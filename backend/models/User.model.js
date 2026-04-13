@@ -41,6 +41,16 @@ const userSchema = new mongoose.Schema(
   address:             { type: String, default: "" },
   cuisines:            { type: [String], default: [] },
   restaurantPhoto:     { type: String, default: "" },
+  // ── Step 3 (Operations) — new fields ──────────────────────
+  description:         { type: String, default: "" },
+  restaurantPhone:     { type: String, default: "" },
+  managerContact:      { type: String, default: "" },
+  telNumber:           { type: String, default: "" },
+  openingTime:         { type: String, default: "" },
+  closingTime:         { type: String, default: "" },
+  priceRange:          { type: String, default: "mid" },
+  rating:              { type: Number, default: 0 },
+  // ── Documents ─────────────────────────────────────────────
   fssaiNumber:         { type: String, default: "" },
   idProofType:         { type: String, default: "" },
   idProof:             { type: String, default: "" },

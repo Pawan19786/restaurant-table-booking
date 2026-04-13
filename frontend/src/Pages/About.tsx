@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/navbar";
 import LoginModal from "./Login";
 import RegisterModal from "./Register";
+import { useTheme } from "../context/ThemeContext";
 
 const PARTICLES = [
   { size: 4, y: "8%",  dur: "16s", delay: "0s",   dir: "ltr" },
@@ -43,7 +44,7 @@ const FUTURE = [
 ];
 
 export default function About() {
-  const [isDark, setIsDark]               = useState(true);
+  const { isDark } = useTheme();
   const [activeLink, setActiveLink]       = useState("About");
   const [openLoginModal, setOpenLogin]    = useState(false);
   const [openRegisterModal, setOpenReg]   = useState(false);
@@ -103,7 +104,6 @@ export default function About() {
 
       <div className="relative z-10">
         <Navbar
-          isDark={isDark} setIsDark={setIsDark}
           onLoginOpen={() => setOpenLogin(true)}
           onRegisterOpen={() => setOpenReg(true)}
           activeLink={activeLink} setActiveLink={setActiveLink}
@@ -306,7 +306,7 @@ export default function About() {
               Explore the application firsthand.
             </p>
             <button
-              onClick={() => navigate("/book-table")}
+              onClick={() => navigate("/restaurants")}
               className={`px-12 py-4 font-['Cinzel'] text-[11px] tracking-[0.22em] uppercase rounded-xl text-white transition-all duration-300 relative overflow-hidden group hover:-translate-y-[2px] ${isDark ? "bg-gradient-to-r from-[#6820c8] via-[#9850e8] to-[#bf78ff] shadow-[0_5px_28px_rgba(140,80,240,0.35)] hover:shadow-[0_12px_44px_rgba(160,100,255,0.52)]" : "bg-gradient-to-r from-[#5010a8] via-[#7830c8] to-[#9050e0] shadow-[0_5px_24px_rgba(100,40,200,0.32)] hover:shadow-[0_12px_40px_rgba(120,60,220,0.48)]"}`}
             >
               <span className="relative z-10">Try Reservation System</span>

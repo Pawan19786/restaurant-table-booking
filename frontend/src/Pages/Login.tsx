@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/api";
-import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { GoogleLogin } from "@react-oauth/google";
+import { useTheme } from "../context/ThemeContext";
+import { useNavigate } from "react-router-dom";
 
 type LoginModalProps = {
   isOpen: boolean;
@@ -21,8 +22,8 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalProps) =>
   const [showPassword, setShowPassword] = useState(false);
   const [loading,      setLoading]      = useState(false);
   const [forgotLoading,setForgotLoading]= useState(false);
-
   const navigate = useNavigate();
+  const { isDark } = useTheme();
   const { login } = useAuth();
 
   // ── Reset form on close ──────────────────────────────────────
@@ -152,7 +153,8 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalProps) =>
         .lm-card {
           position:relative; width:100%; max-width:420px;
           border-radius:24px; overflow:hidden;
-          background:#0d0622;
+          background:rgba(13,6,34,0.7);
+          backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
           border:1px solid rgba(160,96,240,0.22);
           box-shadow:0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(160,96,240,0.08), inset 0 1px 0 rgba(255,255,255,0.04);
           animation:lm-cardIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both;
@@ -208,7 +210,7 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalProps) =>
 
         /* ── CLOSE BUTTON ── */
         .lm-close {
-          position:absolute; top:14px; right:16px;
+          position:absolute; top:14px; right:16px; z-index:10;
           width:28px; height:28px; border-radius:50%; border:none; cursor:pointer;
           display:flex; align-items:center; justify-content:center;
           background:rgba(160,96,240,.1); color:rgba(200,165,255,.55);
@@ -405,9 +407,72 @@ const LoginModal = ({ isOpen, onClose, onSwitchToRegister }: LoginModalProps) =>
           background:linear-gradient(135deg,#a060f0,#d090ff);
           box-shadow:0 0 8px rgba(160,96,240,.5);
         }
+
+        /* ════════════ LIGHT THEME ════════════ */
+        .lm-overlay.light { background:rgba(240,248,255,0.75); }
+        .lm-overlay.light .lm-card {
+          background:rgba(255,255,255,0.9);
+          border:1px solid rgba(37,99,235,0.15);
+          box-shadow:0 20px 60px rgba(0,0,0,0.08), 0 0 0 1px rgba(37,99,235,0.05);
+        }
+        .lm-overlay.light .lm-orb-1 { background:radial-gradient(circle,rgba(37,99,235,.15) 0%,transparent 70%); }
+        .lm-overlay.light .lm-orb-2 { background:radial-gradient(circle,rgba(14,165,233,.12) 0%,transparent 70%); }
+        .lm-overlay.light .lm-glow-line { background:linear-gradient(90deg,transparent 0%,rgba(37,99,235,.4) 30%,rgba(37,99,235,.8) 50%,rgba(37,99,235,.4) 70%,transparent 100%); }
+        .lm-overlay.light .lm-banner { border-bottom:1px solid rgba(226,232,240,0.8); }
+        .lm-overlay.light .lm-brand-icon { background:linear-gradient(135deg,#2563eb,#3b82f6); box-shadow:0 0 14px rgba(37,99,235,.3); }
+        .lm-overlay.light .lm-brand-name {
+          background:linear-gradient(135deg,#1e293b,#334155);
+          -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+        }
+        .lm-overlay.light .lm-banner-title {
+          background:linear-gradient(135deg,#0f172a 0%,#2563eb 50%,#0f172a 100%);
+          background-size:200% auto;
+          -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+        }
+        .lm-overlay.light .lm-banner-sub { color:#64748b; }
+        .lm-overlay.light .lm-close { background:rgba(37,99,235,.06); color:#64748b; }
+        .lm-overlay.light .lm-close:hover { background:rgba(37,99,235,.12); color:#1e293b; }
+        .lm-overlay.light .lm-label { color:#64748b; }
+        .lm-overlay.light .lm-input-icon { color:#94a3b8; }
+        .lm-overlay.light .lm-input {
+          background:rgba(241,245,249,0.6); border:1px solid rgba(226,232,240,0.8);
+          color:#0f172a;
+        }
+        .lm-overlay.light .lm-input:focus {
+          border-color:rgba(37,99,235,.4); box-shadow:0 0 0 3px rgba(37,99,235,.1);
+          background:#ffffff;
+        }
+        .lm-overlay.light .lm-input::placeholder { color:#94a3b8; }
+        .lm-overlay.light .lm-eye { color:#94a3b8; }
+        .lm-overlay.light .lm-eye:hover { color:#475569; }
+        .lm-overlay.light .lm-remember { color:#475569; }
+        .lm-overlay.light .lm-remember input { accent-color:#2563eb; }
+        .lm-overlay.light .lm-forgot-link { color:#2563eb; }
+        .lm-overlay.light .lm-forgot-link:hover { color:#1e3a8a; }
+        .lm-overlay.light .lm-btn-primary {
+          background:linear-gradient(135deg,#1d4ed8,#3b82f6); color:#fff;
+          box-shadow:0 8px 18px rgba(37,99,235,.2);
+        }
+        .lm-overlay.light .lm-btn-primary:hover { box-shadow:0 12px 24px rgba(37,99,235,.35); }
+        .lm-overlay.light .lm-div-line { background:rgba(226,232,240,0.8); }
+        .lm-overlay.light .lm-div-txt { color:#94a3b8; }
+        .lm-overlay.light .lm-footer { color:#64748b; }
+        .lm-overlay.light .lm-footer-btn { color:#2563eb; }
+        .lm-overlay.light .lm-footer-btn:hover { color:#1e3a8a; }
+        .lm-overlay.light .lm-back-btn { color:#64748b; }
+        .lm-overlay.light .lm-back-btn:hover { color:#1e293b; }
+        .lm-overlay.light .lm-hint { color:#475569; }
+        .lm-overlay.light .lm-success-ring { background:rgba(16,185,129,.1); border-color:rgba(16,185,129,.3); box-shadow:0 0 24px rgba(16,185,129,.15); }
+        .lm-overlay.light .lm-success-title { color:#0f172a; }
+        .lm-overlay.light .lm-success-sub { color:#64748b; }
+        .lm-overlay.light .lm-success-email { color:#1e293b; }
+        .lm-overlay.light .lm-tip { background:rgba(241,245,249,0.8); border-color:rgba(226,232,240,0.8); color:#475569; }
+        .lm-overlay.light .lm-btn-secondary { background:transparent; border-color:rgba(226,232,240,0.8); color:#64748b; }
+        .lm-overlay.light .lm-btn-secondary:hover { background:rgba(241,245,249,0.8); color:#1e293b; border-color:rgba(203,213,225,0.8); }
+
       `}</style>
 
-      <div className="lm-overlay" onClick={onClose}>
+      <div className={`lm-overlay${!isDark ? " light" : ""}`} onClick={onClose}>
         <div className="lm-card" onClick={(e) => e.stopPropagation()}>
 
           {/* Background orbs */}

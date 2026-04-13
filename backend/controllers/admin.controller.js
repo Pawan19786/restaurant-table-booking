@@ -54,18 +54,25 @@ export const approveOwner = async (req, res) => {
     if (app && app.restaurantName) {
       let restaurant = await Restaurant.findOne({ addedBy: userId });
       if (!restaurant) {
+        // priceRange mapping: form value → restaurant model enum
+        const priceRangeMap = { budget: "₹", mid: "₹₹", premium: "₹₹₹", fine: "₹₹₹" };
+
         restaurant = await Restaurant.create({
-          name:         app.restaurantName,
-          description:  "",
-          address:      app.address        || "",
-          city:         app.city           || "",
-          cuisineTypes: app.cuisines       || [],
-          phoneNumber:  app.phone          || "",
-          priceRange:   "₹₹",
-          rating:       0,
-          isActive:     true,
-          image:        app.restaurantPhoto || "",
-          addedBy:      userId,
+          name:           app.restaurantName,
+          description:    app.description     || "",
+          address:        app.address         || "",
+          city:           app.city            || "",
+          cuisineTypes:   app.cuisines        || [],
+          phoneNumber:    app.restaurantPhone || app.phone || "",
+          managerContact: app.managerContact  || "",
+          telNumber:      app.telNumber       || "",
+          openingTime:    app.openingTime     || "",
+          closingTime:    app.closingTime     || "",
+          priceRange:     priceRangeMap[app.priceRange] || "₹₹",
+          rating:         Number(app.rating)  || 0,
+          isActive:       true,
+          image:          app.restaurantPhoto || "",
+          addedBy:        userId,
         });
       }
       user.restaurant = restaurant._id;

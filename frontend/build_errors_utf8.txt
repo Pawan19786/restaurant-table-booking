@@ -1,0 +1,11 @@
+﻿
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+src/Pages/HeroSection.tsx(72,10): error TS6133: 'menuDocked' is declared but its value is never read.
+src/Pages/LandingPage.tsx(208,11): error TS6133: 'clamp2' is declared but its value is never read.
+src/Pages/Restaurantdetail.tsx(143,11): error TS6133: 'user' is declared but its value is never read.
+src/Pages/Restaurantdetail.tsx(145,18): error TS6133: 'cartItems' is declared but its value is never read.
+src/Pages/Restaurantdetail.tsx(145,29): error TS6133: 'addItem' is declared but its value is never read.
+src/Pages/Restaurantdetail.tsx(176,10): error TS6133: 'showPayForm' is declared but its value is never read.
+src/Pages/Restaurantdetail.tsx(176,23): error TS6133: 'setShowPayForm' is declared but its value is never read.

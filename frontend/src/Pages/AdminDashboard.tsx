@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface User {
@@ -8,6 +10,10 @@ interface User {
   createdAt: string; isGoogleUser?: boolean;
   restaurant?: { _id: string; name: string; city: string } | string | null;
   isBlocked?: boolean;
+  ownerApplication?: {
+    subscriptionPlan?: string;
+    [key: string]: any;
+  };
 }
 interface Restaurant {
   _id: string; name: string; address: string; city: string;
@@ -232,6 +238,8 @@ function UserRow({ u, isMe, roleLoading, assignLoading, blockLoading, removeOwne
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const navigate     = useNavigate();
+  const { logout }   = useAuth();
+  const { isDark }   = useTheme();
   const token        = localStorage.getItem("token");
   const adminName    = localStorage.getItem("name")    || "Admin";
   const adminPicture = localStorage.getItem("picture") || "";
@@ -415,7 +423,7 @@ export default function AdminDashboard() {
   const handleRemoveOwner = async (userId:string) => {
     setRemoveOwnerLoading(userId);
     try {
-      const res = await fetch(`${API}/admin/remove-owner`,{method:"PATCH",headers:{"Content-Type":"application/json",...authHeader},body:JSON.stringify({userId})});
+      const res = await fetch(`${API}/admin/users/${userId}/remove-owner`,{method:"PATCH",headers:authHeader});
       const data = await res.json();
       if (res.ok) {
         showToast("Owner removed! Restaurant is now unassigned. ✅","success");
@@ -493,7 +501,7 @@ export default function AdminDashboard() {
     if (res.ok) { showToast(data.message,"success"); if(foodForm.restaurant) fetchFoodItems(foodForm.restaurant); }
   };
 
-  const handleLogout = () => { localStorage.clear(); navigate("/",{replace:true}); };
+  const handleLogout = () => { logout(); navigate("/",{replace:true}); };
 
   const filteredUsers = users.filter(u => {
     const matchSearch = u.name.toLowerCase().includes(searchQ.toLowerCase()) || u.email.toLowerCase().includes(searchQ.toLowerCase());
@@ -523,7 +531,7 @@ export default function AdminDashboard() {
         @keyframes ad-spin{to{transform:rotate(360deg)}}
         @keyframes ad-toast{from{opacity:0;transform:translateY(14px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
         .ad-root{min-height:100vh;background:#0a0418;color:#f0ebff;font-family:'Montserrat',sans-serif;display:flex}
-        .ad-sb{width:240px;min-width:240px;background:rgba(255,255,255,.025);border-right:1px solid rgba(160,96,240,.12);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:hidden;transition:width .3s,min-width .3s}
+        .ad-sb{width:240px;min-width:240px;background:rgba(255,255,255,.025);border-right:1px solid rgba(160,96,240,.12);display:flex;flex-direction:column;overflow:hidden;transition:width .3s,min-width .3s}
         .ad-sb.col{width:68px;min-width:68px}
         .ad-sb-logo{display:flex;align-items:center;gap:10px;padding:22px 18px 18px;border-bottom:1px solid rgba(160,96,240,.1);text-decoration:none}
         .ad-logo-ic{width:36px;height:36px;border-radius:10px;flex-shrink:0;background:linear-gradient(135deg,#7030d0,#a060f0);display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(130,60,220,.35)}
@@ -659,11 +667,65 @@ export default function AdminDashboard() {
         .ad-uploading{display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(180,140,255,.6)}
         .ad-req-card{background:rgba(255,255,255,.03);border:1px solid rgba(160,96,240,.1);border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:14px;transition:background .2s}
         .ad-req-card:hover{background:rgba(160,96,240,.06)}
-        .ad-alert-banner{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.18);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px;margin-bottom:18px;animation:ad-fadeUp .5s ease both}
         .ad-alert-banner-text{font-size:12px;color:rgba(251,191,36,.85);line-height:1.5}
+
+        /* ════════════ LIGHT THEME ════════════ */
+        .ad-root.light { background:#f8fafc; color:#0f172a; }
+        .ad-root.light .ad-sb { background:#ffffff; border-color:rgba(203,213,225,0.6); }
+        .ad-root.light .ad-sb-logo { border-bottom-color:rgba(203,213,225,0.6); }
+        .ad-root.light .ad-ni { color:#475569; }
+        .ad-root.light .ad-ni:hover { background:#f1f5f9; color:#0f172a; }
+        .ad-root.light .ad-ni.active { background:#f3e8ff; color:#7e22ce; }
+        .ad-root.light .ad-sb-ft { border-top-color:rgba(203,213,225,0.6); }
+        
+        .ad-root.light .ad-tb { background:#ffffff; border-bottom-color:rgba(203,213,225,0.6); }
+        .ad-root.light .ad-cb { background:#f1f5f9; color:#475569; }
+        .ad-root.light .ad-cb:hover { background:#e2e8f0; color:#0f172a; }
+        .ad-root.light .ad-pt { color:#0f172a; }
+        .ad-root.light .ad-chip { background:#f1f5f9; border-color:rgba(203,213,225,0.6); }
+        .ad-root.light .ad-chip-lb { color:#475569; }
+        
+        .ad-root.light .ad-sc { background:#ffffff; border-color:rgba(203,213,225,0.6); box-shadow:0 4px 12px rgba(0,0,0,0.02); }
+        .ad-root.light .ad-sc:hover { background:#ffffff; border-color:rgba(168,85,247,0.4); box-shadow:0 12px 24px rgba(0,0,0,0.06); }
+        .ad-root.light .ad-sc-num { color:#0f172a; }
+        .ad-root.light .ad-sc-lb { color:#64748b; }
+        
+        .ad-root.light .s-purple { background:#faf5ff; border-color:rgba(168,85,247,0.2); }
+        .ad-root.light .s-blue { background:#eff6ff; border-color:rgba(59,130,246,0.2); }
+        .ad-root.light .s-green { background:#f0fdf4; border-color:rgba(34,197,94,0.2); }
+        .ad-root.light .s-orange { background:#fff7ed; border-color:rgba(249,115,22,0.2); }
+        .ad-root.light .s-red { background:#fef2f2; border-color:rgba(239,68,68,0.2); }
+        .ad-root.light .s-yellow { background:#fffbeb; border-color:rgba(245,158,11,0.2); }
+        
+        .ad-root.light .ad-card { background:#ffffff; border-color:rgba(203,213,225,0.6); box-shadow:0 4px 12px rgba(0,0,0,0.03); }
+        .ad-root.light .ad-card-hd { border-bottom-color:rgba(203,213,225,0.6); }
+        .ad-root.light .ad-card-title { color:#0f172a; font-weight:600; }
+        .ad-root.light .ad-card-sub { color:#64748b; }
+        
+        .ad-root.light .ad-table th { color:#64748b; border-bottom-color:rgba(203,213,225,0.6); }
+        .ad-root.light .ad-table td { color:#475569; border-bottom-color:rgba(203,213,225,0.3); }
+        .ad-root.light .ad-table tr:hover td { background:#f8fafc; }
+        
+        .ad-root.light .ad-un { color:#0f172a; }
+        .ad-root.light .ad-ue { color:#64748b; }
+        
+        .ad-root.light .ad-filter-pill { background:#f1f5f9; border-color:rgba(203,213,225,0.6); color:#64748b; }
+        .ad-root.light .ad-filter-pill.active { background:#f3e8ff; border-color:rgba(168,85,247,0.4); color:#7e22ce; }
+        .ad-root.light .ad-search-wrap { background:#f8fafc; border-color:rgba(203,213,225,0.6); }
+        .ad-root.light .ad-search-in { color:#0f172a; }
+        
+        .ad-root.light .ad-label { color:#64748b; }
+        .ad-root.light .ad-input, .ad-root.light .ad-textarea, .ad-root.light .ad-select { background:#f8fafc; border-color:rgba(203,213,225,0.8); color:#0f172a; }
+        .ad-root.light .ad-input:focus, .ad-root.light .ad-textarea:focus { border-color:rgba(168,85,247,0.5); background:#ffffff; }
+        .ad-root.light .ad-select-sm { background:#ffffff; border-color:rgba(203,213,225,0.8); color:#0f172a; }
+        
+        .ad-root.light .ad-req-card { background:#ffffff; border-color:rgba(203,213,225,0.6); box-shadow:0 4px 12px rgba(0,0,0,0.02); }
+        .ad-root.light .ad-req-card:hover { background:#f8fafc; border-color:rgba(168,85,247,0.3); }
+
+        .ad-root.light .ad-rest-img-placeholder { background:#f1f5f9; border-color:rgba(203,213,225,0.6); }
       `}</style>
 
-      <div className="ad-root">
+      <div className={`ad-root${!isDark ? " light" : ""}`}>
         {/* ── SIDEBAR ── */}
         <aside className={`ad-sb${sidebarOpen?"":" col"}`}>
           <a className="ad-sb-logo" href="/dashboard">
@@ -798,7 +860,14 @@ export default function AdminDashboard() {
                             {/* ✅ Show owner name or "Unassigned" */}
                             <td>
                               {owner
-                                ? <span style={{fontSize:11,color:"rgba(96,208,144,.8)"}}>{owner.name}</span>
+                                ? <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                                    <span style={{fontSize:11,color:"rgba(96,208,144,.8)"}}>{owner.name}</span>
+                                    {owner.ownerApplication?.subscriptionPlan && (
+                                      <span className="ad-status" style={{fontSize:9,background:"rgba(251,191,36,.12)",color:"#fbbf24",border:"1px solid rgba(251,191,36,.22)",alignSelf:"flex-start"}}>
+                                        {owner.ownerApplication.subscriptionPlan.toUpperCase()}
+                                      </span>
+                                    )}
+                                  </div>
                                 : <span className="ad-status unassigned" style={{fontSize:10}}>No Owner</span>
                               }
                             </td>

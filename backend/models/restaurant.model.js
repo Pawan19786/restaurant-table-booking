@@ -88,6 +88,29 @@ const restaurantSchema = new mongoose.Schema(
       default: true,
     },
 
+    // ── Nightlife Extended Fields ───────────────────────────────
+    venueType: {
+      type: String,
+      enum: ["dining", "club", "pub", "lounge", "rooftop", "live_music"],
+      default: "dining"
+    },
+    events: [
+      {
+        eventName: { type: String, required: true },
+        date: { type: Date, required: true },
+        time: { type: String, required: true },
+        artist: { type: String },
+        entryFee: { type: String, default: "Free" }
+      }
+    ],
+    offers: [
+      {
+        title: { type: String, required: true },
+        description: { type: String },
+        validTime: { type: String }
+      }
+    ],
+
     // ── Added by ────────────────────────────────────────────────
     addedBy: {
       type: mongoose.Schema.Types.ObjectId,
