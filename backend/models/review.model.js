@@ -41,4 +41,4 @@ const reviewSchema = new mongoose.Schema(
 // One review per user per restaurant
 reviewSchema.index({ user: 1, restaurant: 1 }, { unique: true });
 
-export default mongoose.model("Review", reviewSchema);
+export default mongoose.models.Review || mongoose.model("Review", reviewSchema);

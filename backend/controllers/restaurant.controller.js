@@ -1,4 +1,4 @@
-import Restaurant from "../models/Restaurant.model.js";
+import Restaurant from "../models/restaurant.model.js";
 import FoodItem   from "../models/Fooditem.model.js";
 import User       from "../models/User.model.js";
 import Review     from "../models/review.model.js";

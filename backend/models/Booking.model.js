@@ -143,4 +143,4 @@ const bookingSchema = new mongoose.Schema(
 bookingSchema.index({ restaurant: 1, date: 1, timeSlot: 1 });
 bookingSchema.index({ user: 1, status: 1 });
 
-export default mongoose.model("Booking", bookingSchema);
+export default mongoose.models.Booking || mongoose.model("Booking", bookingSchema);

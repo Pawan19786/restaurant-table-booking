@@ -1,6 +1,6 @@
-import Booking    from "../models/Booking.model.js";
-import Restaurant from "../models/Restaurant.model.js";
-import nodemailer  from "nodemailer";
+import Booking from "../models/Booking.model.js";
+import Restaurant from "../models/restaurant.model.js";
+import nodemailer from "nodemailer";
 import { notifyUser, notifyOwner } from "../socket.js";
 
 // ── Mailer ───────────────────────────────────────────────────────────────────
@@ -125,12 +125,12 @@ const emailTemplates = {
 
 // ── Socket notification messages ─────────────────────────────────────────────
 const socketMessages = {
-  confirmed:        { title: "Booking Confirmed! ✅",       message: "Your booking has been confirmed.",            type: "success" },
-  rejected:         { title: "Booking Rejected ❌",          message: "Your booking was rejected by the restaurant.", type: "error"   },
-  preparing:        { title: "Order Being Prepared 👨‍🍳",    message: "The restaurant is preparing your order.",      type: "info"    },
-  out_for_delivery: { title: "Out for Delivery 🛵",          message: "Your order is on the way!",                   type: "info"    },
-  delivered:        { title: "Order Delivered 🎉",           message: "Your food has been delivered. Enjoy!",        type: "success" },
-  cancelled:        { title: "Booking Cancelled 🚫",         message: "Your booking has been cancelled.",            type: "warning" },
+  confirmed: { title: "Booking Confirmed! ✅", message: "Your booking has been confirmed.", type: "success" },
+  rejected: { title: "Booking Rejected ❌", message: "Your booking was rejected by the restaurant.", type: "error" },
+  preparing: { title: "Order Being Prepared 👨‍🍳", message: "The restaurant is preparing your order.", type: "info" },
+  out_for_delivery: { title: "Out for Delivery 🛵", message: "Your order is on the way!", type: "info" },
+  delivered: { title: "Order Delivered 🎉", message: "Your food has been delivered. Enjoy!", type: "success" },
+  cancelled: { title: "Booking Cancelled 🚫", message: "Your booking has been cancelled.", type: "warning" },
 };
 
 // ── Helper: generate time slots ──────────────────────────────
@@ -149,7 +149,7 @@ const generateTimeSlots = (openingTime, closingTime) => {
     return `${h12}:${m === 0 ? "00" : m} ${ampm}`;
   };
   const start = parseTime(openingTime) || 660;
-  const end   = parseTime(closingTime) || 1380;
+  const end = parseTime(closingTime) || 1380;
   for (let t = start; t + 60 <= end; t += 60) {
     slots.push(`${formatTime(t)} - ${formatTime(t + 60)}`);
   }
@@ -193,20 +193,20 @@ export const createBooking = async (req, res) => {
     }
 
     const booking = await Booking.create({
-      user:            req.user._id,
-      restaurant:      restaurantId,
-      date:            bookingDate,
-      timeSlot:        isDeliveryOrder ? "" : timeSlot,
-      orderType:       isDeliveryOrder ? "delivery" : "table",
-      guests:          isDeliveryOrder ? 1 : Number(guests),
-      specialRequest:  specialRequest || "",
-      foodItems:       foodItems || [],
+      user: req.user._id,
+      restaurant: restaurantId,
+      date: bookingDate,
+      timeSlot: isDeliveryOrder ? "" : timeSlot,
+      orderType: isDeliveryOrder ? "delivery" : "table",
+      guests: isDeliveryOrder ? 1 : Number(guests),
+      specialRequest: specialRequest || "",
+      foodItems: foodItems || [],
       deliveryDetails: deliveryDetails || {},
-      totalAmount:     totalAmount || 0,
-      paymentStatus:   paymentStatus || "pending",
-      status:          "pending",
-      ownerNotified:   false,
-      userNotified:    false,
+      totalAmount: totalAmount || 0,
+      paymentStatus: paymentStatus || "pending",
+      status: "pending",
+      ownerNotified: false,
+      userNotified: false,
     });
 
     const populated = await Booking.findById(booking._id)
@@ -220,9 +220,9 @@ export const createBooking = async (req, res) => {
     // ── Socket: notify owner of new booking ──
     if (populated.restaurant?.addedBy) {
       notifyOwner(populated.restaurant.addedBy.toString(), {
-        title:     "New Booking! 🔔",
-        message:   `${populated.user.name} booked a ${populated.orderType === "delivery" ? "delivery" : "table"} at ${populated.restaurant.name}`,
-        type:      "info",
+        title: "New Booking! 🔔",
+        message: `${populated.user.name} booked a ${populated.orderType === "delivery" ? "delivery" : "table"} at ${populated.restaurant.name}`,
+        type: "info",
         bookingId: booking._id,
       });
     }
@@ -264,7 +264,7 @@ export const getOwnerBookings = async (req, res) => {
     }
 
     const filter = { restaurant: { $in: queryResIds } };
-    if (status)    filter.status    = status;
+    if (status) filter.status = status;
     if (orderType) filter.orderType = orderType;
     if (date) {
       const d = new Date(date);
@@ -304,38 +304,38 @@ export const updateBookingStatus = async (req, res) => {
     const { bookingId } = req.params;
     const { status, rejectionReason } = req.body;
 
-    const allowedStatuses = ["confirmed","rejected","preparing","out_for_delivery","delivered","cancelled"];
+    const allowedStatuses = ["confirmed", "rejected", "preparing", "out_for_delivery", "delivered", "cancelled"];
     if (!allowedStatuses.includes(status))
       return res.status(400).json({ message: "Invalid status" });
 
     const booking = await Booking.findById(bookingId).populate("restaurant", "addedBy name");
     if (!booking) return res.status(404).json({ message: "Booking not found" });
 
-    const isOwner      = booking.restaurant.addedBy?.toString() === req.user._id.toString();
+    const isOwner = booking.restaurant.addedBy?.toString() === req.user._id.toString();
     const isSuperAdmin = req.user.role === "superadmin";
     if (!isOwner && !isSuperAdmin)
       return res.status(403).json({ message: "Access denied" });
 
     if (booking.orderType === "table") {
-      if (!["confirmed","rejected","cancelled"].includes(status))
+      if (!["confirmed", "rejected", "cancelled"].includes(status))
         return res.status(400).json({ message: "Invalid table booking status" });
     }
 
     if (booking.orderType === "delivery") {
       const validTransitions = {
-        pending:          ["confirmed","rejected","cancelled"],
-        confirmed:        ["preparing","cancelled"],
-        preparing:        ["out_for_delivery","cancelled"],
-        out_for_delivery: ["delivered","cancelled"],
+        pending: ["confirmed", "rejected", "cancelled"],
+        confirmed: ["preparing", "cancelled"],
+        preparing: ["out_for_delivery", "cancelled"],
+        out_for_delivery: ["delivered", "cancelled"],
         delivered: [], rejected: [], cancelled: [],
       };
       if (!validTransitions[booking.status]?.includes(status))
         return res.status(400).json({ message: `Cannot change from ${booking.status} to ${status}` });
     }
 
-    booking.status          = status;
+    booking.status = status;
     booking.rejectionReason = rejectionReason || "";
-    booking.userNotified    = false;
+    booking.userNotified = false;
     await booking.save();
 
     const updated = await Booking.findById(bookingId)
@@ -372,10 +372,10 @@ export const cancelBooking = async (req, res) => {
     if (!booking) return res.status(404).json({ message: "Booking not found" });
     if (booking.user.toString() !== req.user._id.toString())
       return res.status(403).json({ message: "Access denied" });
-    if (["cancelled","rejected","delivered"].includes(booking.status))
+    if (["cancelled", "rejected", "delivered"].includes(booking.status))
       return res.status(400).json({ message: `Cannot cancel a ${booking.status} booking` });
 
-    booking.status      = "cancelled";
+    booking.status = "cancelled";
     booking.cancelledAt = new Date();
     booking.cancelledBy = "user";
     await booking.save();
@@ -395,15 +395,15 @@ export const getAvailableSlots = async (req, res) => {
     const restaurant = await Restaurant.findById(restaurantId);
     if (!restaurant) return res.status(404).json({ message: "Restaurant not found" });
 
-    const allSlots  = generateTimeSlots(restaurant.openingTime, restaurant.closingTime);
+    const allSlots = generateTimeSlots(restaurant.openingTime, restaurant.closingTime);
     const bookingDate = new Date(date);
-    const nextDay   = new Date(bookingDate);
+    const nextDay = new Date(bookingDate);
     nextDay.setDate(nextDay.getDate() + 1);
 
     const bookedSlots = await Booking.find({
       restaurant: restaurantId,
       date: { $gte: bookingDate, $lt: nextDay },
-      status: { $in: ["pending","confirmed"] },
+      status: { $in: ["pending", "confirmed"] },
       orderType: { $ne: "delivery" },
     }).select("timeSlot");
 
@@ -420,9 +420,9 @@ export const getAllBookings = async (req, res) => {
   try {
     const { status, restaurantId, orderType } = req.query;
     const filter = {};
-    if (status)       filter.status     = status;
+    if (status) filter.status = status;
     if (restaurantId) filter.restaurant = restaurantId;
-    if (orderType)    filter.orderType  = orderType;
+    if (orderType) filter.orderType = orderType;
 
     const bookings = await Booking.find(filter)
       .populate("restaurant", "name city")
