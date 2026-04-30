@@ -81,4 +81,7 @@ const foodItemSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("FoodItem", foodItemSchema);
+// ── Performance Indexes ─────────────────────────────────────────
+foodItemSchema.index({ restaurant: 1, category: 1 });     // food items by restaurant
+
+export default mongoose.models.FoodItem || mongoose.model("FoodItem", foodItemSchema);

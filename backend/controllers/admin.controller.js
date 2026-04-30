@@ -1,5 +1,5 @@
-import User       from "../models/User.model.js";
-import Restaurant from "../models/Restaurant.model.js";
+import User from "../models/User.model.js";
+import Restaurant from "../models/restaurant.model.js";
 
 // ── GET all users ─────────────────────────────────────────────
 export const getAllUsers = async (req, res) => {
@@ -47,7 +47,7 @@ export const approveOwner = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    user.role        = "owner";
+    user.role = "owner";
     user.ownerStatus = "approved";
 
     const app = user.ownerApplication;
@@ -58,21 +58,21 @@ export const approveOwner = async (req, res) => {
         const priceRangeMap = { budget: "₹", mid: "₹₹", premium: "₹₹₹", fine: "₹₹₹" };
 
         restaurant = await Restaurant.create({
-          name:           app.restaurantName,
-          description:    app.description     || "",
-          address:        app.address         || "",
-          city:           app.city            || "",
-          cuisineTypes:   app.cuisines        || [],
-          phoneNumber:    app.restaurantPhone || app.phone || "",
-          managerContact: app.managerContact  || "",
-          telNumber:      app.telNumber       || "",
-          openingTime:    app.openingTime     || "",
-          closingTime:    app.closingTime     || "",
-          priceRange:     priceRangeMap[app.priceRange] || "₹₹",
-          rating:         Number(app.rating)  || 0,
-          isActive:       true,
-          image:          app.restaurantPhoto || "",
-          addedBy:        userId,
+          name: app.restaurantName,
+          description: app.description || "",
+          address: app.address || "",
+          city: app.city || "",
+          cuisineTypes: app.cuisines || [],
+          phoneNumber: app.restaurantPhone || app.phone || "",
+          managerContact: app.managerContact || "",
+          telNumber: app.telNumber || "",
+          openingTime: app.openingTime || "",
+          closingTime: app.closingTime || "",
+          priceRange: priceRangeMap[app.priceRange] || "₹₹",
+          rating: Number(app.rating) || 0,
+          isActive: true,
+          image: app.restaurantPhoto || "",
+          addedBy: userId,
         });
       }
       user.restaurant = restaurant._id;
@@ -146,9 +146,9 @@ export const removeOwnerFromRestaurant = async (req, res) => {
     );
 
     // User ka restaurant field aur role reset karo
-    user.restaurant  = null;
+    user.restaurant = null;
     user.ownerStatus = "none";
-    user.role        = "user";
+    user.role = "user";
     await user.save({ validateBeforeSave: false });
 
     res.status(200).json({
@@ -173,7 +173,7 @@ export const assignRestaurant = async (req, res) => {
       return res.status(400).json({ message: "User must have owner role first" });
 
     await Restaurant.findByIdAndUpdate(restaurantId, { addedBy: userId });
-    user.restaurant  = restaurantId;
+    user.restaurant = restaurantId;
     user.ownerStatus = "approved";
     await user.save();
 
