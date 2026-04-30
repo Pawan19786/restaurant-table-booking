@@ -120,4 +120,9 @@ const restaurantSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ── Performance Indexes ─────────────────────────────────────────
+restaurantSchema.index({ addedBy: 1 });                    // owner dashboard queries
+restaurantSchema.index({ city: 1, isActive: 1 });          // listing filters
+restaurantSchema.index({ isActive: 1, createdAt: -1 });   // default listing sort
+
 export default mongoose.models.Restaurant || mongoose.model("Restaurant", restaurantSchema);

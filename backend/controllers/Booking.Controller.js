@@ -242,7 +242,8 @@ export const getMyBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({ user: req.user._id })
       .populate("restaurant", "name city address image openingTime closingTime")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
     return res.status(200).json({ success: true, bookings });
   } catch {
     return res.status(500).json({ message: "Failed to fetch bookings" });
@@ -253,7 +254,7 @@ export const getOwnerBookings = async (req, res) => {
   try {
     const { status, date, orderType, restaurantId } = req.query;
 
-    const restaurants = await Restaurant.find({ addedBy: req.user._id });
+    const restaurants = await Restaurant.find({ addedBy: req.user._id }).select("_id").lean();
     if (restaurants.length === 0) return res.status(404).json({ message: "No restaurants found for this owner" });
 
     const ownerResIds = restaurants.map(r => r._id.toString());
@@ -276,7 +277,8 @@ export const getOwnerBookings = async (req, res) => {
     const bookings = await Booking.find(filter)
       .populate("user", "name email picture")
       .populate("restaurant", "name city image")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     await Booking.updateMany({ restaurant: { $in: queryResIds }, ownerNotified: false }, { ownerNotified: true });
 
@@ -288,7 +290,7 @@ export const getOwnerBookings = async (req, res) => {
 
 export const getOwnerBookingCount = async (req, res) => {
   try {
-    const restaurants = await Restaurant.find({ addedBy: req.user._id });
+    const restaurants = await Restaurant.find({ addedBy: req.user._id }).select("_id").lean();
     if (restaurants.length === 0) return res.status(200).json({ count: 0 });
     const count = await Booking.countDocuments({
       restaurant: { $in: restaurants.map(r => r._id) }, status: "pending", ownerNotified: false,
@@ -405,7 +407,7 @@ export const getAvailableSlots = async (req, res) => {
       date: { $gte: bookingDate, $lt: nextDay },
       status: { $in: ["pending", "confirmed"] },
       orderType: { $ne: "delivery" },
-    }).select("timeSlot");
+    }).select("timeSlot").lean();
 
     const bookedSlotNames = bookedSlots.map((b) => b.timeSlot);
     const slots = allSlots.map((slot) => ({ slot, available: !bookedSlotNames.includes(slot) }));
@@ -427,7 +429,8 @@ export const getAllBookings = async (req, res) => {
     const bookings = await Booking.find(filter)
       .populate("restaurant", "name city")
       .populate("user", "name email")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     return res.status(200).json({ success: true, bookings });
   } catch {
