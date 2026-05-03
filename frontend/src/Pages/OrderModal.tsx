@@ -101,13 +101,18 @@ function OrderForm({
     return sum + price * item.qty;
   }, 0);
 
-  const addItem = (item: FoodItem) =>
+  const addItem = (item: FoodItem) => {
     setSelectedItems((prev) => {
       const ex = prev.find((i) => i._id === item._id);
-      return ex
-        ? prev.map((i) => (i._id === item._id ? { ...i, qty: i.qty + 1 } : i))
-        : [...prev, { ...item, qty: 1 }];
+      if (!ex) {
+        // Trigger notification only when a new item is added to the cart
+        api.post("/notifications/cart-add", { itemName: item.name, restaurantName: restaurant.name }, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } })
+           .catch(err => console.error(err));
+        return [...prev, { ...item, qty: 1 }];
+      }
+      return prev.map((i) => (i._id === item._id ? { ...i, qty: i.qty + 1 } : i));
     });
+  };
 
   const removeItem = (id: string) =>
     setSelectedItems((prev) => {
