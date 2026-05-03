@@ -18,6 +18,7 @@ import adminRoutes       from "./routes/admin.routes.js";
 import bookingRoutes     from "./routes/Booking.routes.js";
 import stripeRoutes      from "./routes/stripe.Routes.js";
 import reviewRoutes      from "./routes/review.route.js";
+import notificationRoutes from "./routes/notification.routes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -107,6 +108,7 @@ app.use("/api/restaurants", restaurantRoutes);
 app.use("/api/bookings",    bookingRoutes);
 app.use("/api/payments",    stripeRoutes);
 app.use("/api/reviews",     reviewRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // ── Global Error Handler ────────────────────────────────────────
 app.use((err, req, res, next) => {
