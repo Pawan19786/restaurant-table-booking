@@ -2,16 +2,17 @@ import { createContext, useContext, useState, useEffect, useRef, useCallback } f
 import type { ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuth } from "./AuthContext";
+import api from "../api/api";
 
 export interface AppNotification {
-  id: string;
+  _id: string;
   title: string;
   message: string;
   type: "success" | "error" | "info" | "warning";
   bookingId?: string;
   restaurant?: string;
   createdAt: string;
-  read: boolean;
+  isRead: boolean;
 }
 
 interface NotificationContextType {
@@ -27,30 +28,19 @@ const NotificationContext = createContext<NotificationContextType | null>(null);
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const { user, isLoggedIn } = useAuth();
 
-  // Persist notifications in localStorage per user
-  const [notifications, setNotifications] = useState<AppNotification[]>(() => {
-    try {
-      const saved = localStorage.getItem(`tt_notifs_${user?.id || "guest"}`);
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-  });
-
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const socketRef = useRef<Socket | null>(null);
 
-  // Save notifications to localStorage whenever they change
+  // Fetch from DB
   useEffect(() => {
-    try {
-      localStorage.setItem(`tt_notifs_${user?.id || "guest"}`, JSON.stringify(notifications.slice(0, 50)));
-    } catch { /* ignore quota errors */ }
-  }, [notifications, user?.id]);
-
-  // Reload saved notifications when user changes
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(`tt_notifs_${user?.id || "guest"}`);
-      setNotifications(saved ? JSON.parse(saved) : []);
-    } catch { setNotifications([]); }
-  }, [user?.id]);
+    if (!isLoggedIn || !user?.id) {
+      setNotifications([]);
+      return;
+    }
+    api.get("/notifications", { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } })
+      .then(res => setNotifications(res.data.notifications || []))
+      .catch(err => console.error("Failed to fetch notifications", err));
+  }, [isLoggedIn, user?.id]);
 
   useEffect(() => {
     if (!isLoggedIn || !user?.id) return;
@@ -66,11 +56,11 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     if (socket.connected) joinRoom();
     socket.on("connect", joinRoom);
 
-    socket.on("notification", (payload: Omit<AppNotification, "id" | "read">) => {
+    socket.on("notification", (payload: Omit<AppNotification, "_id" | "isRead"> & { _id?: string }) => {
       const notif: AppNotification = {
         ...payload,
-        id:   Date.now().toString(36) + Math.random().toString(36).slice(2),
-        read: false,
+        _id:  payload._id || Date.now().toString(36) + Math.random().toString(36).slice(2),
+        isRead: false,
       };
       setNotifications(prev => [notif, ...prev].slice(0, 50));
     });
@@ -85,13 +75,21 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [isLoggedIn, user?.id]);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  const markAllRead = useCallback(() =>
-    setNotifications(prev => prev.map(n => ({ ...n, read: true }))), []);
+  const markAllRead = useCallback(async () => {
+    try {
+      await api.put(`/notifications/read-all`, {}, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    } catch (e) { console.error(e); }
+  }, []);
 
-  const markRead = useCallback((id: string) =>
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n)), []);
+  const markRead = useCallback(async (id: string) => {
+    try {
+      await api.put(`/notifications/${id}/read`, {}, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+    } catch (e) { console.error(e); }
+  }, []);
 
   const clearAll = useCallback(() => setNotifications([]), []);
 
@@ -340,11 +338,11 @@ export function NotificationBell({ theme }: { theme: "dark" | "light" }) {
             ) : (
               notifications.map(n => (
                 <div
-                  key={n.id}
-                  className={`nb-notif-item${!n.read ? " unread" : ""}`}
-                  onClick={() => markRead(n.id)}
+                  key={n._id}
+                  className={`nb-notif-item${!n.isRead ? " unread" : ""}`}
+                  onClick={() => markRead(n._id)}
                 >
-                  <div className={`nb-notif-dot${n.read ? " read" : ""}`} />
+                  <div className={`nb-notif-dot${n.isRead ? " read" : ""}`} />
                   <div className="nb-notif-icon">{typeIcons[n.type]}</div>
                   <div className="nb-notif-body">
                     <div className="nb-notif-item-title" style={{ color: typeColors[n.type] }}>
