@@ -9,6 +9,7 @@
 //   getIO().to(`user_${userId}`).emit("notification", payload);
 
 import { Server } from "socket.io";
+import Notification from "./models/Notification.model.js";
 
 let io = null;
 
@@ -46,11 +47,23 @@ export const getIO = () => {
 
 // ── Notification helpers (call from controllers) ──────────────
 
-export const notifyUser = (userId, payload) => {
+export const notifyUser = async (userId, payload) => {
   try {
+    // Save to DB
+    let notification;
+    if (payload.saveToDb !== false) {
+      notification = await Notification.create({
+        userId,
+        title: payload.title || "Notification",
+        message: payload.message || "You have a new notification",
+        type: payload.type || "system",
+      });
+    }
+
     getIO().to(`user_${userId}`).emit("notification", {
       ...payload,
-      createdAt: new Date().toISOString(),
+      _id: notification ? notification._id : undefined,
+      createdAt: notification ? notification.createdAt : new Date().toISOString(),
     });
   } catch (e) {
     console.error("Socket notify error:", e.message);
