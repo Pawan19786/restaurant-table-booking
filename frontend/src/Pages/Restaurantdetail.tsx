@@ -153,6 +153,13 @@ export default function RestaurantDetail() {
   const [foodSearch, setFoodSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [vegFilter, foodSearch, activeCategory]);
+
   // Cart conflict modal
   const [cartConflict, setCartConflict] = useState<{ item: FoodItem; fromRestaurant: string } | null>(null);
   
@@ -284,8 +291,11 @@ export default function RestaurantDetail() {
     .filter(f => f.name.toLowerCase().includes(foodSearch.toLowerCase()))
     .filter(f => activeCategory === "All" || f.category === activeCategory);
 
+  const totalPages = Math.ceil(filteredFood.length / ITEMS_PER_PAGE);
+  const paginatedFood = filteredFood.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
   const groupedFood = CATEGORIES.reduce((acc, cat) => {
-    const items = filteredFood.filter(f => f.category === cat);
+    const items = paginatedFood.filter(f => f.category === cat);
     if (items.length > 0) acc[cat] = items;
     return acc;
   }, {} as Record<string, FoodItem[]>);
@@ -360,7 +370,10 @@ export default function RestaurantDetail() {
         .rd-cat-section{margin-bottom:36px}
         .rd-cat-name{font-family:'Playfair Display',serif;font-size:16px;font-weight:600;color:rgba(240,236,228,0.6);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.06)}
 
-        .rd-food-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+        .rd-food-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+        @media (max-width: 1024px) { .rd-food-grid { grid-template-columns:repeat(3, 1fr); } }
+        @media (max-width: 768px) { .rd-food-grid { grid-template-columns:repeat(2, 1fr); } }
+        @media (max-width: 480px) { .rd-food-grid { grid-template-columns:1fr; } }
         .rd-food-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;overflow:hidden;transition:all 0.25s;display:flex;flex-direction:column;cursor:pointer}
         .rd-food-card:hover{border-color:rgba(251,191,36,0.2);transform:translateY(-2px);background:rgba(255,255,255,0.05)}
         .rd-food-img{width:100%;height:140px;object-fit:cover}
@@ -373,6 +386,12 @@ export default function RestaurantDetail() {
         .rd-food-footer{display:flex;align-items:center;justify-content:space-between}
         .rd-food-price{font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:#fbbf24}
         .rd-food-offer{font-size:10px;color:#10b981;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:2px 7px}
+
+        .rd-pagination { display:flex;align-items:center;justify-content:center;gap:8px;margin-top:32px; }
+        .rd-page-btn { padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#f0ece4;cursor:pointer;font-size:13px;transition:all 0.2s; }
+        .rd-page-btn:hover:not(:disabled) { background:rgba(251,191,36,0.1);border-color:rgba(251,191,36,0.3);color:#fbbf24; }
+        .rd-page-btn.active { background:#fbbf24;color:#080a0e;border-color:#fbbf24;font-weight:600; }
+        .rd-page-btn:disabled { opacity:0.4;cursor:not-allowed; }
 
         .rd-modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(4,2,12,0.85);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;padding:20px}
         .rd-modal{background:#0d1117;border:1px solid rgba(251,191,36,0.2);border-radius:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;animation:rd-modal 0.3s cubic-bezier(0.34,1.56,0.64,1) both}
@@ -443,6 +462,10 @@ export default function RestaurantDetail() {
         .rd-root.light .rd-food-img-ph { background:linear-gradient(135deg,#f1f5f9,#e2e8f0); }
         .rd-root.light .rd-food-name { color:#0f172a; }
         .rd-root.light .rd-food-desc { color:#64748b; }
+
+        .rd-root.light .rd-page-btn { background:#ffffff;border-color:rgba(203,213,225,0.6);color:#475569; }
+        .rd-root.light .rd-page-btn:hover:not(:disabled) { border-color:rgba(217,119,6,0.3);color:#d97706;background:#fef3c7; }
+        .rd-root.light .rd-page-btn.active { background:#d97706;color:#ffffff;border-color:#d97706; }
 
         .rd-root.light .rd-review-card { background:#ffffff; border-color:rgba(203,213,225,0.6); }
         .rd-root.light .rd-review-form { background:#ffffff; border-color:rgba(203,213,225,0.6); }
@@ -550,6 +573,18 @@ export default function RestaurantDetail() {
                     </div>
                   </div>
                 ))
+              )}
+
+              {totalPages > 1 && (
+                <div className="rd-pagination">
+                  <button className="rd-page-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>Prev</button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                    <button key={pageNum} className={`rd-page-btn${currentPage === pageNum ? " active" : ""}`} onClick={() => setCurrentPage(pageNum)}>
+                      {pageNum}
+                    </button>
+                  ))}
+                  <button className="rd-page-btn" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>Next</button>
+                </div>
               )}
             </>
           )}
