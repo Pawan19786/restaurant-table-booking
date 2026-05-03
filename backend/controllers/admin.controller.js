@@ -1,5 +1,6 @@
 import User from "../models/User.model.js";
 import Restaurant from "../models/restaurant.model.js";
+import { dispatchNotification } from "../utils/notificationDispatcher.js";
 
 // ── GET all users ─────────────────────────────────────────────
 export const getAllUsers = async (req, res) => {
@@ -79,6 +80,15 @@ export const approveOwner = async (req, res) => {
     }
 
     await user.save({ validateBeforeSave: false });
+
+    // ── Dispatch Notification ──
+    await dispatchNotification({
+      userId: user._id.toString(),
+      title: "Owner Request Approved! 🎉",
+      message: "Congratulations! Your request to become a restaurant owner has been approved by the admin.",
+      type: "approval",
+    });
+
     res.status(200).json({ success: true, message: "Owner approved and restaurant assigned!", user });
   } catch (error) {
     console.error("Approve Owner Error:", error);
@@ -94,6 +104,15 @@ export const rejectOwner = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
     user.ownerStatus = "rejected";
     await user.save();
+
+    // ── Dispatch Notification ──
+    await dispatchNotification({
+      userId: user._id.toString(),
+      title: "Owner Request Rejected ❌",
+      message: "We're sorry, but your request to become a restaurant owner has been rejected.",
+      type: "approval",
+    });
+
     res.status(200).json({ success: true, message: "Owner request rejected" });
   } catch {
     res.status(500).json({ message: "Failed to reject request" });
